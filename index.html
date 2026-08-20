@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIGAP BERITA — Simulasi Game Aktif Pembelajaran Berita</title>
+<style>
+  :root{
+    --bg1:#0f172a; --bg2:#1e293b;
+    --accent:#f59e0b; --accent2:#38bdf8;
+    --good:#22c55e; --bad:#ef4444;
+    --card:#ffffff; --text:#1e293b; --muted:#64748b;
+    --radius:16px;
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background: radial-gradient(circle at 20% 10%, #1e3a5f 0%, var(--bg1) 45%, var(--bg2) 100%);
+    color:var(--text);
+    padding:20px;
+  }
+  .app{max-width:900px; margin:0 auto;}
+  header.top{
+    text-align:center; color:#fff; margin-bottom:18px;
+  }
+  header.top h1{
+    font-size:2rem; margin:0 0 6px; letter-spacing:.5px;
+  }
+  header.top p{margin:0; color:#cbd5e1; font-size:.95rem;}
+
+  .hud{
+    display:flex; justify-content:space-between; align-items:center;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+    border-radius:14px; padding:10px 16px; margin-bottom:18px; color:#fff;
+    font-size:.9rem; flex-wrap:wrap; gap:8px;
+  }
+  .hud .stat{display:flex; gap:6px; align-items:center;}
+  .hud .stat b{font-size:1.1rem; color:var(--accent);}
+  .badge{
+    background:linear-gradient(135deg,var(--accent),#fb923c);
+    padding:3px 10px; border-radius:999px; font-weight:700; color:#1a1200;
+  }
+
+  .card{
+    background:var(--card); border-radius:var(--radius);
+    padding:26px; box-shadow:0 20px 40px -12px rgba(0,0,0,.5);
+    margin-bottom:18px;
+  }
+
+  /* MENU */
+  .menu-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:16px;
+  }
+  .menu-item{
+    border:2px solid #e2e8f0; border-radius:14px; padding:18px;
+    cursor:pointer; transition:.15s; text-align:center; background:#f8fafc;
+  }
+  .menu-item:hover{border-color:var(--accent2); transform:translateY(-3px); box-shadow:0 10px 20px -8px rgba(56,189,248,.4);}
+  .menu-item .emoji{font-size:2.2rem; display:block; margin-bottom:8px;}
+  .menu-item h3{margin:0 0 6px; font-size:1.05rem;}
+  .menu-item p{margin:0; font-size:.82rem; color:var(--muted);}
+  .menu-item .lock{color:var(--muted); font-size:.75rem;}
+
+  h2.section-title{margin-top:0; display:flex; align-items:center; gap:10px;}
+  .pill{
+    background:#eef2ff; color:#4338ca; font-size:.7rem; font-weight:700;
+    padding:3px 10px; border-radius:999px; text-transform:uppercase;
+  }
+
+  .btn{
+    display:inline-block; border:none; border-radius:10px; padding:10px 20px;
+    font-weight:700; cursor:pointer; font-size:.9rem; transition:.15s;
+  }
+  .btn-primary{background:var(--accent2); color:#04202f;}
+  .btn-primary:hover{filter:brightness(1.08); transform:translateY(-1px);}
+  .btn-secondary{background:#e2e8f0; color:#334155;}
+  .btn-secondary:hover{background:#cbd5e1;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+  .btn-row{display:flex; gap:10px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap;}
+
+  /* QUIZ */
+  .progress-bar{
+    height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin-bottom:18px;
+  }
+  .progress-bar > div{
+    height:100%; background:linear-gradient(90deg,var(--accent2),#22d3ee); transition:.3s;
+  }
+  .question-text{font-size:1.1rem; font-weight:600; margin-bottom:16px; line-height:1.5;}
+  .option{
+    display:block; width:100%; text-align:left; padding:12px 16px; margin-bottom:10px;
+    border:2px solid #e2e8f0; border-radius:10px; background:#fff; cursor:pointer;
+    font-size:.95rem; transition:.15s;
+  }
+  .option:hover{border-color:var(--accent2); background:#f0f9ff;}
+  .option.correct{border-color:var(--good); background:#f0fdf4; color:#166534; font-weight:700;}
+  .option.wrong{border-color:var(--bad); background:#fef2f2; color:#991b1b; font-weight:700;}
+  .option:disabled{cursor:default;}
+  .feedback{
+    margin-top:14px; padding:12px 14px; border-radius:10px; font-size:.9rem; display:none;
+  }
+  .feedback.show{display:block;}
+  .feedback.good{background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;}
+  .feedback.bad{background:#fef2f2; color:#991b1b; border:1px solid #fecaca;}
+
+  /* DRAG DROP */
+  .news-sample{
+    background:#f8fafc; border-left:4px solid var(--accent2); padding:12px 16px;
+    border-radius:8px; font-size:.88rem; color:#334155; margin-bottom:16px; line-height:1.6;
+  }
+  .dropzone-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px;}
+  .dropzone-list li{
+    background:#fff; border:2px dashed #cbd5e1; border-radius:10px; padding:12px 14px;
+    cursor:grab; font-size:.9rem; display:flex; gap:10px; align-items:flex-start;
+    transition:.15s;
+  }
+  .dropzone-list li.dragging{opacity:.4;}
+  .dropzone-list li .tag{
+    flex-shrink:0; background:var(--accent2); color:#04202f; font-weight:700;
+    font-size:.7rem; padding:2px 8px; border-radius:6px; margin-top:2px;
+  }
+  .dropzone-list li.locked{
+    border-style:solid; border-color:var(--good); background:#f0fdf4;
+  }
+
+  /* DETECTIVE */
+  .adiksimba-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px; margin-top:16px;
+  }
+  .adiksimba-card{
+    border:2px solid #e2e8f0; border-radius:10px; padding:10px;
+  }
+  .adiksimba-card label{
+    font-weight:700; font-size:.8rem; color:var(--accent2); display:block; margin-bottom:6px;
+  }
+  .adiksimba-card input{
+    width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; font-size:.85rem;
+  }
+  .adiksimba-card.correct{border-color:var(--good); background:#f0fdf4;}
+  .adiksimba-card.wrong{border-color:var(--bad); background:#fef2f2;}
+
+  /* RESULT */
+  .result-box{text-align:center; padding:20px 0;}
+  .result-box .big-emoji{font-size:3.5rem; margin-bottom:8px;}
+  .result-box .score-num{font-size:2.5rem; font-weight:800; color:var(--accent2); margin:6px 0;}
+  .result-box p{color:var(--muted);}
+
+  /* START / IDENTITY */
+  .start-box{max-width:420px; margin:10px auto; text-align:center;}
+  .start-box .emoji-lg{font-size:3rem; margin-bottom:10px;}
+  .field{text-align:left; margin-bottom:14px;}
+  .field label{display:block; font-weight:700; font-size:.85rem; margin-bottom:6px; color:#334155;}
+  .field input{
+    width:100%; border:2px solid #e2e8f0; border-radius:10px; padding:10px 12px;
+    font-size:.95rem;
+  }
+  .field input:focus{outline:none; border-color:var(--accent2);}
+  .start-box .btn-primary{width:100%; padding:12px; font-size:1rem; margin-top:6px;}
+  .hint{font-size:.78rem; color:var(--muted); margin-top:8px;}
+
+  /* MATCHING */
+  .match-cols{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .match-col h4{font-size:.8rem; text-transform:uppercase; color:var(--muted); margin:0 0 10px;}
+  .match-item{
+    display:block; width:100%; text-align:left; padding:10px 12px; margin-bottom:8px;
+    border:2px solid #e2e8f0; border-radius:10px; background:#fff; cursor:pointer;
+    font-size:.85rem; transition:.15s;
+  }
+  .match-item:hover{border-color:var(--accent2);}
+  .match-item.selected{border-color:var(--accent2); background:#f0f9ff; font-weight:700;}
+  .match-item.matched{border-color:var(--good); background:#f0fdf4; color:#166534; cursor:default; opacity:.7;}
+  .match-item.shake{border-color:var(--bad); background:#fef2f2; animation:shake .3s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}
+  }
+
+  /* EDITOR BERITA */
+  .editor-para{
+    background:#f8fafc; border-radius:10px; padding:14px 16px; line-height:1.9; font-size:.92rem;
+  }
+  .sentence-chip{
+    cursor:pointer; padding:2px 4px; border-radius:6px; transition:.15s; border-bottom:2px dashed transparent;
+  }
+  .sentence-chip:hover{background:#e0f2fe;}
+  .sentence-chip.selected{background:#fef9c3; border-bottom-color:var(--accent);}
+  .sentence-chip.correct-mark{background:#dcfce7; border-bottom-color:var(--good);}
+  .sentence-chip.wrong-mark{background:#fee2e2; border-bottom-color:var(--bad);}
+  .correction-box{
+    margin-top:14px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px;
+    padding:12px 14px; font-size:.85rem; color:#1e40af; display:none;
+  }
+  .correction-box.show{display:block;}
+
+  /* TIME ATTACK */
+  .timer-bar{height:10px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin-bottom:16px;}
+  .timer-bar > div{height:100%; background:linear-gradient(90deg,#f87171,var(--accent)); transition:width .1s linear;}
+  .tf-question{font-size:1.2rem; font-weight:700; text-align:center; margin:20px 0; line-height:1.5;}
+  .tf-buttons{display:flex; gap:14px; justify-content:center;}
+  .tf-btn{
+    flex:1; max-width:180px; padding:16px; border-radius:14px; border:none; font-weight:800;
+    font-size:1.05rem; cursor:pointer; transition:.15s; color:#fff;
+  }
+  .tf-btn.true-btn{background:var(--good);}
+  .tf-btn.false-btn{background:var(--bad);}
+  .tf-btn:hover{filter:brightness(1.1); transform:translateY(-2px);}
+  .tf-btn:disabled{opacity:.5; cursor:default; transform:none;}
+  .ta-score-strip{text-align:center; color:var(--muted); font-size:.85rem; margin-bottom:6px;}
+
+  /* WRITING (TULIS BERITA) */
+  .fakta-box{
+    background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; margin-bottom:18px;
+  }
+  .fakta-box h4{margin:0 0 10px; font-size:.85rem; color:var(--accent2); text-transform:uppercase;}
+  .fakta-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px 16px;}
+  .fakta-grid div{font-size:.85rem; line-height:1.5;}
+  .fakta-grid b{color:#334155;}
+  .write-field{margin-bottom:16px;}
+  .write-field label{display:flex; justify-content:space-between; font-weight:700; font-size:.85rem; margin-bottom:6px; color:#334155;}
+  .write-field label .wc{font-weight:400; color:var(--muted); font-size:.78rem;}
+  .write-field textarea{
+    width:100%; border:2px solid #e2e8f0; border-radius:10px; padding:10px 12px;
+    font-size:.9rem; font-family:inherit; resize:vertical; min-height:60px;
+  }
+  .write-field textarea:focus{outline:none; border-color:var(--accent2);}
+  .checklist{list-style:none; margin:0; padding:0;}
+  .checklist li{
+    padding:8px 10px; border-radius:8px; margin-bottom:6px; font-size:.85rem;
+    background:#f8fafc; display:flex; gap:8px; align-items:flex-start;
+  }
+  .checklist li.pass{background:#f0fdf4; color:#166534;}
+  .checklist li.fail{background:#fef2f2; color:#991b1b;}
+  .writing-note{
+    background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 14px;
+    font-size:.82rem; color:#1e40af; margin-top:14px;
+  }
+
+  .download-bar{
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+    border-radius:14px; padding:12px 16px; margin-bottom:18px; color:#fff;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    font-size:.85rem;
+  }
+  .download-bar .btn{padding:8px 16px; font-size:.85rem;}
+
+  footer.bottom{text-align:center; color:#94a3b8; font-size:.78rem; margin-top:20px;}
+
+  @media (max-width:600px){
+    .card{padding:18px;}
+    header.top h1{font-size:1.5rem;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>📰 SIGAP BERITA</h1>
+    <p>Simulasi Game Aktif Pembelajaran Berita — Bahasa Indonesia Kelas XI</p>
+  </header>
+
+  <div class="hud" id="hudBar" style="display:none;">
+    <div class="stat">🧑‍🎓 <b id="hudNama">-</b> (<span id="hudKelas">-</span>)</div>
+    <div class="stat">⭐ Skor: <b id="hudScore">0</b></div>
+    <div class="stat">🔥 Level: <b id="hudLevel">Pemula</b></div>
+    <div class="stat">🏅 Bintang: <b id="hudStars">0</b>/3</div>
+    <div class="badge" id="hudBadge">Belum ada lencana</div>
+  </div>
+
+  <div class="download-bar" id="downloadBar" style="display:none;">
+    <span id="downloadBarLabel">💾 Simpan progres jawabanmu agar bisa dikirim ke guru</span>
+    <button class="btn btn-primary" onclick="downloadResults()">📥 Unduh Hasil (CSV) — cadangan</button>
+  </div>
+
+  <!-- START SCREEN (IDENTITY) -->
+  <div class="card" id="screen-start">
+    <div class="start-box">
+      <div class="emoji-lg">📝</div>
+      <h2 class="section-title" style="justify-content:center;">Isi Data Diri Dahulu</h2>
+      <p style="color:var(--muted); font-size:.88rem; margin-top:-6px;">Data ini akan dicatat pada file hasil belajarmu, supaya guru bisa mengecek jawabanmu.</p>
+      <div class="field">
+        <label for="inputNama">Nama Lengkap</label>
+        <input type="text" id="inputNama" placeholder="Contoh: Siti Aminah">
+      </div>
+      <div class="field">
+        <label for="inputKelas">Kelas</label>
+        <input type="text" id="inputKelas" placeholder="Contoh: XI IPA 2">
+      </div>
+      <button class="btn btn-primary" onclick="submitStart()">🚀 Mulai Bermain</button>
+      <div class="hint" id="startError" style="color:var(--bad); display:none;">Nama dan kelas wajib diisi ya!</div>
+      <div class="hint" id="connStatus" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
+  <!-- MENU SCREEN -->
+  <div class="card" id="screen-menu" style="display:none;">
+    <h2 class="section-title">Pilih Misi <span class="pill">7 Mode</span></h2>
+    <div class="menu-grid">
+      <div class="menu-item" onclick="startQuiz()">
+        <span class="emoji">🧠</span>
+        <h3>1. Kuis Wartawan Cilik</h3>
+        <p>Uji pemahamanmu: pengertian, sifat aktual & faktual, struktur, dan ciri kebahasaan teks berita.</p>
+      </div>
+      <div class="menu-item" onclick="startDrag()">
+        <span class="emoji">🧩</span>
+        <h3>2. Susun Piramida Terbalik</h3>
+        <p>Urutkan bagian berita acak menjadi teks berita yang benar sesuai strukturnya.</p>
+      </div>
+      <div class="menu-item" onclick="startDetective()">
+        <span class="emoji">🔍</span>
+        <h3>3. Detektif ADIKSIMBA</h3>
+        <p>Temukan unsur 5W+1H (Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana) dalam contoh berita.</p>
+      </div>
+      <div class="menu-item" onclick="startMatching()">
+        <span class="emoji">🔗</span>
+        <h3>4. Cocokkan Istilah</h3>
+        <p>Jodohkan istilah teks berita (judul, ADIKSIMBA, konjungsi, dll) dengan definisinya yang tepat.</p>
+      </div>
+      <div class="menu-item" onclick="startEditor()">
+        <span class="emoji">✏️</span>
+        <h3>5. Editor Berita</h3>
+        <p>Jadilah editor! Temukan kalimat yang salah/tidak efektif dalam contoh teks berita.</p>
+      </div>
+      <div class="menu-item" onclick="startTimeAttack()">
+        <span class="emoji">⏱️</span>
+        <h3>6. Tebak Cepat B/S</h3>
+        <p>Jawab Benar/Salah secepat mungkin sebelum waktu habis. Uji refleks & pemahamanmu!</p>
+      </div>
+      <div class="menu-item" onclick="startWriting()">
+        <span class="emoji">✍️</span>
+        <h3>7. Tulis Berita</h3>
+        <p>Latihan keterampilan menulis: susun teks beritamu sendiri (judul, teras, tubuh, ekor) dari fakta yang diberikan.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="card" id="screen-quiz" style="display:none;">
+    <h2 class="section-title">🧠 Kuis Wartawan Cilik <span class="pill" id="quizProgressLabel">1/10</span></h2>
+    <div class="progress-bar"><div id="quizProgressBar" style="width:0%"></div></div>
+    <div class="question-text" id="quizQuestion"></div>
+    <div id="quizOptions"></div>
+    <div class="feedback" id="quizFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="quizNextBtn" onclick="nextQuiz()" disabled>Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- DRAG DROP SCREEN -->
+  <div class="card" id="screen-drag" style="display:none;">
+    <h2 class="section-title">🧩 Susun Piramida Terbalik <span class="pill">Struktur Berita</span></h2>
+    <p style="color:var(--muted); font-size:.88rem;">Seret (drag) atau gunakan tombol ↑↓ untuk mengurutkan potongan berikut dari <b>Judul → Teras (Lead) → Tubuh Berita → Ekor Berita</b>, lalu klik "Periksa Urutan".</p>
+    <ul class="dropzone-list" id="dragList"></ul>
+    <div class="feedback" id="dragFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" onclick="checkDrag()">✅ Periksa Urutan</button>
+    </div>
+  </div>
+
+  <!-- DETECTIVE SCREEN -->
+  <div class="card" id="screen-detective" style="display:none;">
+    <h2 class="section-title">🔍 Detektif ADIKSIMBA <span class="pill" id="detProgressLabel">1/3</span></h2>
+    <div class="news-sample" id="detText"></div>
+    <p style="color:var(--muted); font-size:.85rem; margin-bottom:0;">Isi kolom di bawah berdasarkan teks berita di atas:</p>
+    <div class="adiksimba-grid" id="detGrid"></div>
+    <div class="feedback" id="detFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="detCheckBtn" onclick="checkDetective()">✅ Periksa Jawaban</button>
+      <button class="btn btn-primary" id="detNextBtn" onclick="nextDetective()" style="display:none;">Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- MATCHING SCREEN -->
+  <div class="card" id="screen-matching" style="display:none;">
+    <h2 class="section-title">🔗 Cocokkan Istilah <span class="pill" id="matchProgressLabel">0/8</span></h2>
+    <p style="color:var(--muted); font-size:.88rem;">Klik satu istilah di kiri, lalu klik definisi yang cocok di kanan.</p>
+    <div class="match-cols">
+      <div class="match-col">
+        <h4>Istilah</h4>
+        <div id="matchTerms"></div>
+      </div>
+      <div class="match-col">
+        <h4>Definisi</h4>
+        <div id="matchDefs"></div>
+      </div>
+    </div>
+    <div class="feedback" id="matchFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+    </div>
+  </div>
+
+  <!-- EDITOR BERITA SCREEN -->
+  <div class="card" id="screen-editor" style="display:none;">
+    <h2 class="section-title">✏️ Editor Berita <span class="pill" id="editorProgressLabel">1/3</span></h2>
+    <p style="color:var(--muted); font-size:.88rem;">Klik kalimat yang menurutmu SALAH atau tidak efektif, lalu klik "Periksa".</p>
+    <div class="editor-para" id="editorPara"></div>
+    <div class="correction-box" id="editorCorrection"></div>
+    <div class="feedback" id="editorFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="editorCheckBtn" onclick="checkEditor()">✅ Periksa</button>
+      <button class="btn btn-primary" id="editorNextBtn" onclick="nextEditor()" style="display:none;">Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- TIME ATTACK SCREEN -->
+  <div class="card" id="screen-timeattack" style="display:none;">
+    <h2 class="section-title">⏱️ Tebak Cepat Benar/Salah <span class="pill" id="taProgressLabel">1/8</span></h2>
+    <div class="ta-score-strip" id="taScoreStrip">Skor ronde ini: 0</div>
+    <div class="timer-bar"><div id="taTimerBar" style="width:100%"></div></div>
+    <div class="tf-question" id="taQuestion"></div>
+    <div class="tf-buttons">
+      <button class="tf-btn true-btn" id="taTrueBtn" onclick="answerTimeAttack(true)">✅ BENAR</button>
+      <button class="tf-btn false-btn" id="taFalseBtn" onclick="answerTimeAttack(false)">❌ SALAH</button>
+    </div>
+    <div class="feedback" id="taFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="taNextBtn" onclick="nextTimeAttack()" style="display:none;">Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- WRITING (TULIS BERITA) SCREEN -->
+  <div class="card" id="screen-writing" style="display:none;">
+    <h2 class="section-title">✍️ Tulis Berita <span class="pill" id="writeProgressLabel">1/3</span></h2>
+    <p style="color:var(--muted); font-size:.88rem;">Baca fakta-fakta berikut, lalu tulis teks beritamu sendiri sesuai struktur piramida terbalik (Judul → Teras → Tubuh → Ekor).</p>
+    <div class="fakta-box">
+      <h4>📋 Data & Fakta Peristiwa</h4>
+      <div class="fakta-grid" id="writeFaktaGrid"></div>
+    </div>
+
+    <div class="write-field">
+      <label>Judul Berita <span class="wc" id="wcJudul">0 kata</span></label>
+      <textarea id="writeJudul" rows="1" placeholder="Tulis judul berita yang menarik dan singkat..." oninput="updateWordCount('writeJudul','wcJudul')"></textarea>
+    </div>
+    <div class="write-field">
+      <label>Teras Berita (Lead) <span class="wc" id="wcTeras">0 kata</span></label>
+      <textarea id="writeTeras" rows="2" placeholder="Ringkas inti peristiwa memuat unsur 5W+1H..." oninput="updateWordCount('writeTeras','wcTeras')"></textarea>
+    </div>
+    <div class="write-field">
+      <label>Tubuh Berita <span class="wc" id="wcTubuh">0 kata</span></label>
+      <textarea id="writeTubuh" rows="3" placeholder="Jelaskan peristiwa secara lebih rinci..." oninput="updateWordCount('writeTubuh','wcTubuh')"></textarea>
+    </div>
+    <div class="write-field">
+      <label>Ekor Berita <span class="wc" id="wcEkor">0 kata</span></label>
+      <textarea id="writeEkor" rows="2" placeholder="Informasi tambahan/pelengkap..." oninput="updateWordCount('writeEkor','wcEkor')"></textarea>
+    </div>
+
+    <div id="writeChecklistBox" style="display:none;">
+      <h4 style="font-size:.85rem; color:var(--muted); text-transform:uppercase; margin-bottom:8px;">Hasil Pemeriksaan Otomatis</h4>
+      <ul class="checklist" id="writeChecklist"></ul>
+      <div class="writing-note">📌 Pemeriksaan ini hanya mengecek kelengkapan struktur & fakta secara otomatis. Kualitas tulisan (diksi, keefektifan kalimat, koherensi) akan dinilai langsung oleh gurumu sesuai rubrik penilaian menulis teks berita.</div>
+    </div>
+
+    <div class="feedback" id="writeFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="writeCheckBtn" onclick="checkWriting()">✅ Periksa & Kirim ke Guru</button>
+      <button class="btn btn-primary" id="writeNextBtn" onclick="nextWriting()" style="display:none;">Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="card" id="screen-result" style="display:none;">
+    <div class="result-box">
+      <div class="big-emoji" id="resultEmoji">🎉</div>
+      <h2 id="resultTitle">Misi Selesai!</h2>
+      <div class="score-num" id="resultScore">+0</div>
+      <p id="resultDesc"></p>
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn btn-secondary" onclick="goMenu()">⬅ Kembali ke Menu</button>
+        <button class="btn btn-primary" id="resultRetry" onclick="retryLast()">🔄 Ulangi Misi</button>
+        <button class="btn btn-primary" onclick="downloadResults()">📥 Unduh Hasil (CSV)</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bottom">SIGAP BERITA • Materi: Teks Berita — sifat aktual & faktual, struktur piramida terbalik, unsur 5W+1H, ciri kebahasaan • Kelas XI SMA Negeri 2 Semarang</footer>
+</div>
+
+<script>
+/* ===================== KONEKSI KE GURU (GOOGLE SHEETS) ===================== */
+// GURU: ganti nilai di bawah ini dengan URL Web App Google Apps Script kamu
+// (lihat panduan setup yang disertakan) agar jawaban siswa otomatis tersimpan
+// ke Google Sheets milikmu secara real-time. Jika dibiarkan seperti ini,
+// game tetap berjalan normal, hanya saja pengiriman otomatis dinonaktifkan
+// dan siswa harus mengunduh & mengirim file CSV secara manual.
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoKz4jSBPeexzzu_gJCLQvkOETl8dWF7k8jCN7UHRPKjvVHEuo3M1NpWDV-kzkvumo/exec";
+
+function isTeacherConnected(){
+  return GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.indexOf('GANTI_DENGAN_URL') !== 0;
+}
+
+function sendToTeacher(record){
+  if(!isTeacherConnected()) return;
+  const payload = Object.assign({
+    nama: state.student.nama,
+    kelas: state.student.kelas,
+    skorTotal: state.score
+  }, record);
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors', // Apps Script tidak mengirim header CORS; kita tak perlu baca respons
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari CORS preflight
+    body: JSON.stringify(payload)
+  }).catch(()=>{ /* jika gagal (mis. offline), data tetap aman di CSV lokal */ });
+}
+
+function updateConnStatus(){
+  const el = document.getElementById('connStatus');
+  if(!el) return;
+  if(isTeacherConnected()){
+    el.innerHTML = '🟢 Tersambung otomatis ke guru — jawabanmu akan langsung tersimpan.';
+  } else {
+    el.innerHTML = '🟡 Mode offline — hasil belum tersambung otomatis ke guru, jangan lupa klik <b>"Unduh Hasil (CSV)"</b> lalu kirim ke gurumu.';
+  }
+}
+
+/* ===================== STATE ===================== */
+let state = {
+  score: 0,
+  quizCorrect: 0,
+  lastMode: null,
+  student: { nama:'', kelas:'', mulai:null },
+  log: []  // detailed record of every answer given, for export
+};
+
+function saveHud(){
+  document.getElementById('hudScore').textContent = state.score;
+  let level = 'Pemula';
+  if(state.score >= 250) level = 'Redaktur';
+  else if(state.score >= 150) level = 'Wartawan Senior';
+  else if(state.score >= 60) level = 'Wartawan Muda';
+  document.getElementById('hudLevel').textContent = level;
+  let stars = Math.min(3, Math.floor(state.score/100));
+  document.getElementById('hudStars').textContent = stars;
+  let badge = 'Belum ada lencana';
+  if(stars>=3) badge = '🏆 Pewarta Utama';
+  else if(stars>=2) badge = '🥈 Pewarta Andal';
+  else if(stars>=1) badge = '🥉 Pewarta Pemula';
+  document.getElementById('hudBadge').textContent = badge;
+  document.getElementById('hudNama').textContent = state.student.nama || '-';
+  document.getElementById('hudKelas').textContent = state.student.kelas || '-';
+}
+
+function hideAll(){
+  ['start','menu','quiz','drag','detective','matching','editor','timeattack','writing','result'].forEach(s=>{
+    document.getElementById('screen-'+s).style.display='none';
+  });
+}
+function goMenu(){ hideAll(); document.getElementById('screen-menu').style.display='block'; }
+
+/* ===================== START / IDENTITY ===================== */
+function submitStart(){
+  const nama = document.getElementById('inputNama').value.trim();
+  const kelas = document.getElementById('inputKelas').value.trim();
+  const err = document.getElementById('startError');
+  if(!nama || !kelas){
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  state.student.nama = nama;
+  state.student.kelas = kelas;
+  state.student.mulai = new Date();
+  document.getElementById('hudBar').style.display = 'flex';
+  document.getElementById('downloadBar').style.display = 'flex';
+  document.getElementById('downloadBarLabel').textContent = isTeacherConnected()
+    ? '🟢 Jawabanmu otomatis tersimpan ke guru. Tombol di bawah hanya cadangan.'
+    : '🟡 Belum tersambung otomatis — unduh & kirim CSV ke guru setelah selesai.';
+  saveHud();
+  sendToTeacher({
+    mode: 'Sesi Dimulai',
+    bagian: '-',
+    item: 'Siswa mulai bermain',
+    jawabanSiswa: '-',
+    kunci: '-',
+    status: 'Mulai'
+  });
+  goMenu();
+}
+
+/* ===================== LOGGING & CSV EXPORT ===================== */
+function logAnswer(record){
+  record.waktu = new Date().toLocaleString('id-ID');
+  state.log.push(record);
+  sendToTeacher(record);
+}
+
+function csvEscape(val){
+  if(val === undefined || val === null) val = '';
+  val = String(val).replace(/"/g,'""');
+  return '"' + val + '"';
+}
+
+function downloadResults(){
+  if(!state.student.nama){
+    alert('Isi dulu Nama dan Kelas sebelum mengunduh hasil ya!');
+    return;
+  }
+  const rows = [];
+  rows.push(['Nama','Kelas','Mode','No/Bagian','Pertanyaan/Item','Jawaban Siswa','Jawaban Benar/Kunci','Status','Waktu']);
+  if(state.log.length === 0){
+    rows.push([state.student.nama, state.student.kelas, '-', '-', 'Belum ada jawaban yang dikerjakan', '-', '-', '-', new Date().toLocaleString('id-ID')]);
+  } else {
+    state.log.forEach(r=>{
+      rows.push([state.student.nama, state.student.kelas, r.mode, r.bagian, r.item, r.jawabanSiswa, r.kunci, r.status, r.waktu]);
+    });
+  }
+  // summary row
+  rows.push([]);
+  rows.push(['RINGKASAN']);
+  rows.push(['Nama', state.student.nama]);
+  rows.push(['Kelas', state.student.kelas]);
+  rows.push(['Skor Total', state.score]);
+  rows.push(['Level', document.getElementById('hudLevel').textContent]);
+  rows.push(['Bintang', document.getElementById('hudStars').textContent + '/3']);
+  rows.push(['Waktu Unduh', new Date().toLocaleString('id-ID')]);
+
+  const csvContent = rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csvContent], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeNama = state.student.nama.replace(/[^a-z0-9]+/gi,'_');
+  const safeKelas = state.student.kelas.replace(/[^a-z0-9]+/gi,'_');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `Hasil_SIGAPBERITA_${safeNama}_${safeKelas}_${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ===================== QUIZ DATA ===================== */
+const quizBank = [
+  {
+    q: "Apa pengertian teks berita yang paling tepat?",
+    opts: [
+      "Teks yang berisi opini pribadi penulis tentang suatu peristiwa",
+      "Teks yang menyampaikan informasi mengenai suatu peristiwa/kejadian secara aktual dan faktual",
+      "Teks yang menceritakan kisah fiksi secara kronologis",
+      "Teks yang berisi langkah-langkah membuat sesuatu"
+    ], correct:1,
+    explain:"Teks berita adalah teks yang menyampaikan informasi tentang peristiwa yang terjadi secara aktual (baru/hangat) dan faktual (berdasarkan fakta, bukan rekaan)."
+  },
+  {
+    q: "Sebuah berita dikatakan bersifat 'aktual' apabila...",
+    opts: [
+      "Peristiwanya sudah lama terjadi namun tetap menarik",
+      "Informasinya baru saja terjadi/masih hangat dibicarakan",
+      "Ditulis menggunakan bahasa baku",
+      "Disertai gambar atau foto"
+    ], correct:1,
+    explain:"Aktual berarti informasi yang disampaikan bersifat baru, masih hangat, dan sedang menjadi perhatian masyarakat."
+  },
+  {
+    q: "Sebuah berita dikatakan bersifat 'faktual' apabila...",
+    opts: [
+      "Berdasarkan kejadian nyata/fakta, bukan karangan atau opini",
+      "Ditulis oleh wartawan terkenal",
+      "Peristiwanya terjadi di luar negeri",
+      "Menggunakan kalimat yang panjang"
+    ], correct:0,
+    explain:"Faktual berarti berita disusun berdasarkan kejadian nyata dan dapat dibuktikan kebenarannya, bukan hasil rekaan atau opini semata."
+  },
+  {
+    q: "Struktur teks berita secara umum disusun menggunakan pola...",
+    opts: [
+      "Piramida terbalik", "Kronologis maju", "Sebab-akibat", "Deskriptif spasial"
+    ], correct:0,
+    explain:"Teks berita disusun dengan pola piramida terbalik: informasi terpenting diletakkan di awal (teras berita), lalu semakin ke bawah semakin kurang penting."
+  },
+  {
+    q: "Bagian berita yang berisi ringkasan inti peristiwa (mengandung unsur 5W+1H) disebut...",
+    opts: [
+      "Judul berita", "Teras berita (lead)", "Tubuh berita", "Ekor berita"
+    ], correct:1,
+    explain:"Teras berita (lead) adalah paragraf pembuka yang merangkum inti peristiwa, biasanya memuat unsur 5W+1H."
+  },
+  {
+    q: "Unsur berita 'ADIKSIMBA' merupakan singkatan dari...",
+    opts: [
+      "Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana",
+      "Aktual, Data, Informasi, Kredibel, Sumber, Isi, Media, Berita, Analisis",
+      "Awal, Diksi, Kalimat, Struktur, Isi, Makna, Bahasa, Alur",
+      "Aman, Dinamis, Ikonik, Kuat, Simpel, Berimbang, Aktual"
+    ], correct:0,
+    explain:"ADIKSIMBA adalah singkatan dari unsur berita: Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana (5W+1H)."
+  },
+  {
+    q: "Kalimat 'Polisi mengatakan bahwa jalan tersebut akan ditutup selama tiga hari' merupakan contoh kalimat...",
+    opts: [
+      "Kalimat langsung", "Kalimat tidak langsung", "Kalimat tanya", "Kalimat perintah"
+    ], correct:1,
+    explain:"Kalimat tidak langsung melaporkan ucapan orang lain tanpa mengutip persis kata-katanya, biasanya diawali kata 'bahwa'."
+  },
+  {
+    q: "Manakah contoh kalimat langsung dalam teks berita?",
+    opts: [
+      "Kepala sekolah menyampaikan bahwa ujian akan dimajukan.",
+      "\"Kami akan segera memperbaiki jembatan ini,\" ujar Kepala Dinas PU.",
+      "Menurut warga, banjir sudah surut sejak pagi.",
+      "Ia menjelaskan penyebab kemacetan tersebut."
+    ], correct:1,
+    explain:"Kalimat langsung mengutip ucapan seseorang persis sesuai aslinya, ditandai tanda kutip (\" \")."
+  },
+  {
+    q: "Kata kerja mental sering muncul dalam teks berita, contohnya adalah...",
+    opts: [
+      "Berlari, melompat, memukul", "Menduga, menyimpulkan, berpendapat", "Menulis, membaca, menggambar", "Merah, biru, hijau"
+    ], correct:1,
+    explain:"Kata kerja mental menunjukkan aktivitas berpikir/merasakan, seperti menduga, menyimpulkan, meyakini, berpendapat — sering muncul saat mengutip pandangan narasumber."
+  },
+  {
+    q: "Konjungsi yang umum digunakan dalam teks berita untuk menunjukkan urutan waktu adalah...",
+    opts: [
+      "Kemudian, setelah itu, lalu", "Meskipun, walaupun", "Karena, sebab", "Atau, maupun"
+    ], correct:0,
+    explain:"Konjungsi temporal seperti 'kemudian', 'setelah itu', dan 'lalu' digunakan untuk menunjukkan urutan waktu peristiwa dalam berita."
+  },
+  {
+    q: "Bagian berita yang berisi informasi tambahan/kurang penting dan biasanya bisa dipotong tanpa mengubah inti berita disebut...",
+    opts: [
+      "Judul", "Teras berita", "Tubuh berita", "Ekor berita"
+    ], correct:3,
+    explain:"Ekor berita berisi informasi pelengkap yang paling kurang penting, sesuai prinsip piramida terbalik, sehingga paling aman dipotong saat penyuntingan."
+  },
+  {
+    q: "Menyunting (mengedit) teks berita bertujuan untuk...",
+    opts: [
+      "Menambahkan opini pribadi penulis",
+      "Memastikan berita akurat, jelas, dan sesuai kaidah bahasa sebelum dipublikasikan",
+      "Mengubah fakta agar lebih menarik",
+      "Memperpanjang tulisan sebanyak mungkin"
+    ], correct:1,
+    explain:"Penyuntingan berita bertujuan memastikan keakuratan fakta, kejelasan bahasa, dan kesesuaian dengan kaidah kebahasaan sebelum berita dipublikasikan."
+  }
+];
+
+let quizOrder = [];
+let quizIndex = 0;
+let quizAnswered = false;
+
+function shuffle(arr){
+  let a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function startQuiz(){
+  quizOrder = shuffle([...Array(quizBank.length).keys()]).slice(0,10);
+  quizIndex = 0;
+  state.quizCorrect = 0;
+  hideAll();
+  document.getElementById('screen-quiz').style.display='block';
+  renderQuiz();
+}
+
+function renderQuiz(){
+  quizAnswered = false;
+  const total = quizOrder.length;
+  const qData = quizBank[quizOrder[quizIndex]];
+  document.getElementById('quizProgressLabel').textContent = (quizIndex+1)+"/"+total;
+  document.getElementById('quizProgressBar').style.width = ((quizIndex)/total*100)+"%";
+  document.getElementById('quizQuestion').textContent = qData.q;
+  const optsDiv = document.getElementById('quizOptions');
+  optsDiv.innerHTML = '';
+  const optOrder = shuffle([...Array(qData.opts.length).keys()]);
+  optOrder.forEach(oi=>{
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = qData.opts[oi];
+    btn.onclick = () => answerQuiz(oi, qData, btn);
+    optsDiv.appendChild(btn);
+  });
+  document.getElementById('quizFeedback').className='feedback';
+  document.getElementById('quizFeedback').textContent='';
+  document.getElementById('quizNextBtn').disabled = true;
+}
+
+function answerQuiz(oi, qData, btnEl){
+  if(quizAnswered) return;
+  quizAnswered = true;
+  const allBtns = document.querySelectorAll('#quizOptions .option');
+  allBtns.forEach(b=>{
+    b.disabled = true;
+    if(b.textContent === qData.opts[qData.correct]) b.classList.add('correct');
+  });
+  const fb = document.getElementById('quizFeedback');
+  const isCorrect = (oi === qData.correct);
+  if(isCorrect){
+    btnEl.classList.add('correct');
+    state.score += 10;
+    state.quizCorrect += 1;
+    fb.className='feedback show good';
+    fb.textContent = '✅ Benar! ' + qData.explain;
+  } else {
+    btnEl.classList.add('wrong');
+    fb.className='feedback show bad';
+    fb.textContent = '❌ Belum tepat. ' + qData.explain;
+  }
+  logAnswer({
+    mode: 'Kuis',
+    bagian: (quizIndex+1) + '/' + quizOrder.length,
+    item: qData.q,
+    jawabanSiswa: qData.opts[oi],
+    kunci: qData.opts[qData.correct],
+    status: isCorrect ? 'Benar' : 'Salah'
+  });
+  saveHud();
+  document.getElementById('quizNextBtn').disabled = false;
+}
+
+function nextQuiz(){
+  quizIndex++;
+  if(quizIndex >= quizOrder.length){
+    document.getElementById('quizProgressBar').style.width = '100%';
+    finishQuiz();
+  } else {
+    renderQuiz();
+  }
+}
+
+function finishQuiz(){
+  hideAll();
+  document.getElementById('screen-result').style.display='block';
+  const total = quizOrder.length;
+  const correct = state.quizCorrect;
+  const pct = Math.round(correct/total*100);
+  document.getElementById('resultEmoji').textContent = pct>=80?'🏆':(pct>=50?'🎉':'📚');
+  document.getElementById('resultTitle').textContent = 'Kuis Selesai!';
+  document.getElementById('resultScore').textContent = correct+'/'+total+' benar ('+pct+'%)';
+  document.getElementById('resultDesc').textContent = pct>=80
+    ? 'Luar biasa! Kamu sudah sangat paham materi teks berita.'
+    : (pct>=50 ? 'Bagus! Terus asah pemahamanmu tentang teks berita.' : 'Yuk pelajari lagi materi struktur & unsur berita, lalu coba lagi!');
+  state.lastMode = 'quiz';
+}
+
+/* ===================== DRAG DROP ===================== */
+const dragCorrectOrder = [
+  {tag:'JUDUL', text:'Banjir Rendam Tiga Kecamatan di Kota Sejahtera'},
+  {tag:'TERAS', text:'Banjir setinggi satu meter merendam tiga kecamatan di Kota Sejahtera pada Senin (18/8) pagi akibat hujan deras yang mengguyur sejak semalam.'},
+  {tag:'TUBUH', text:'Menurut Kepala BPBD setempat, banjir disebabkan oleh meluapnya Sungai Ciliwung dan buruknya sistem drainase kota. Sedikitnya 200 warga terpaksa mengungsi ke tempat yang lebih aman.'},
+  {tag:'EKOR', text:'Pemerintah kota berjanji akan segera memperbaiki saluran drainase yang rusak dalam waktu dekat.'}
+];
+
+let dragCurrent = [];
+
+function startDrag(){
+  dragCurrent = shuffle(dragCorrectOrder);
+  hideAll();
+  document.getElementById('screen-drag').style.display='block';
+  renderDrag();
+}
+
+function renderDrag(){
+  const list = document.getElementById('dragList');
+  list.innerHTML = '';
+  document.getElementById('dragFeedback').className='feedback';
+  document.getElementById('dragFeedback').textContent = '';
+  dragCurrent.forEach((item, idx) => {
+    const li = document.createElement('li');
+    li.draggable = true;
+    li.dataset.idx = idx;
+    li.innerHTML = `<span class="tag">${item.tag}</span><span style="flex:1">${item.text}
+      <div style="margin-top:8px; display:flex; gap:6px;">
+        <button class="btn btn-secondary" style="padding:2px 10px; font-size:.75rem;" onclick="moveDrag(${idx},-1)">↑</button>
+        <button class="btn btn-secondary" style="padding:2px 10px; font-size:.75rem;" onclick="moveDrag(${idx},1)">↓</button>
+      </div></span>`;
+    li.addEventListener('dragstart', ()=>{ li.classList.add('dragging'); dragStartIdx = idx; });
+    li.addEventListener('dragend', ()=>{ li.classList.remove('dragging'); });
+    li.addEventListener('dragover', (e)=>{ e.preventDefault(); });
+    li.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      const fromIdx = dragStartIdx;
+      const toIdx = idx;
+      if(fromIdx===toIdx) return;
+      const moved = dragCurrent.splice(fromIdx,1)[0];
+      dragCurrent.splice(toIdx,0,moved);
+      renderDrag();
+    });
+    list.appendChild(li);
+  });
+}
+let dragStartIdx = null;
+
+function moveDrag(idx, dir){
+  const newIdx = idx+dir;
+  if(newIdx<0 || newIdx>=dragCurrent.length) return;
+  const tmp = dragCurrent[idx];
+  dragCurrent[idx] = dragCurrent[newIdx];
+  dragCurrent[newIdx] = tmp;
+  renderDrag();
+}
+
+function checkDrag(){
+  let correctCount = 0;
+  dragCurrent.forEach((item, idx)=>{
+    if(item.tag === dragCorrectOrder[idx].tag) correctCount++;
+  });
+  const fb = document.getElementById('dragFeedback');
+  const susunanSiswa = dragCurrent.map(i=>i.tag).join(' → ');
+  const susunanBenar = dragCorrectOrder.map(i=>i.tag).join(' → ');
+  logAnswer({
+    mode: 'Susun Struktur',
+    bagian: '-',
+    item: 'Urutan Piramida Terbalik',
+    jawabanSiswa: susunanSiswa,
+    kunci: susunanBenar,
+    status: (correctCount === dragCorrectOrder.length) ? 'Benar' : `${correctCount}/${dragCorrectOrder.length} tepat`
+  });
+  if(correctCount === dragCorrectOrder.length){
+    fb.className = 'feedback show good';
+    fb.textContent = '✅ Sempurna! Urutan struktur berita (Judul → Teras → Tubuh → Ekor) sudah benar sesuai piramida terbalik.';
+    state.score += 30;
+    saveHud();
+    setTimeout(()=>{
+      hideAll();
+      document.getElementById('screen-result').style.display='block';
+      document.getElementById('resultEmoji').textContent = '🧩';
+      document.getElementById('resultTitle').textContent = 'Piramida Terbalik Tersusun!';
+      document.getElementById('resultScore').textContent = '+30 poin';
+      document.getElementById('resultDesc').textContent = 'Kamu berhasil menyusun struktur teks berita dengan benar.';
+      state.lastMode = 'drag';
+    }, 1200);
+  } else {
+    fb.className = 'feedback show bad';
+    fb.textContent = `❌ Masih ada ${dragCorrectOrder.length-correctCount} bagian yang urutannya belum tepat. Ingat: Judul → Teras (inti berita/5W+1H) → Tubuh (penjelasan) → Ekor (info tambahan).`;
+  }
+}
+
+/* ===================== DETECTIVE (5W+1H) ===================== */
+const detectiveBank = [
+  {
+    text: `<b>Gempa Bumi Guncang Wilayah Selatan Jawa</b><br>Gempa berkekuatan 5,6 magnitudo mengguncang wilayah selatan Jawa pada Rabu (19/8) pukul 03.12 WIB. Menurut BMKG, gempa dipicu oleh aktivitas subduksi lempeng di Samudra Hindia. Getaran dirasakan hingga ke Yogyakarta dan Solo, namun belum ada laporan korban jiwa maupun kerusakan berat.`,
+    answers: {
+      apa: ["gempa bumi","gempa"],
+      dimana: ["wilayah selatan jawa","selatan jawa"],
+      kapan: ["rabu (19/8) pukul 03.12 wib","rabu, 19/8 pukul 03.12 wib","rabu 19/8 pukul 03.12 wib"],
+      siapa: ["bmkg"],
+      mengapa: ["aktivitas subduksi lempeng di samudra hindia","subduksi lempeng di samudra hindia"],
+      bagaimana: ["berkekuatan 5,6 magnitudo, getaran dirasakan hingga yogyakarta dan solo","5,6 magnitudo"]
+    }
+  },
+  {
+    text: `<b>Tim Voli Putri SMA Nusantara Raih Juara Nasional</b><br>Tim bola voli putri SMA Nusantara berhasil meraih gelar juara nasional dalam kejuaraan pelajar yang digelar di Jakarta, Sabtu (15/8). Kemenangan diraih setelah tim mengalahkan SMA Harapan Bangsa 3-1 pada babak final. Pelatih tim, Ibu Ratna, mengatakan bahwa kemenangan ini adalah hasil latihan intensif selama enam bulan.`,
+    answers: {
+      apa: ["tim voli putri sma nusantara meraih juara nasional","meraih gelar juara nasional"],
+      dimana: ["jakarta"],
+      kapan: ["sabtu (15/8)","sabtu, 15/8","sabtu 15/8"],
+      siapa: ["tim bola voli putri sma nusantara","sma nusantara"],
+      mengapa: ["latihan intensif selama enam bulan","hasil latihan intensif selama enam bulan"],
+      bagaimana: ["mengalahkan sma harapan bangsa 3-1 di babak final","3-1 pada babak final"]
+    }
+  },
+  {
+    text: `<b>Harga Cabai di Pasar Tradisional Melonjak Tajam</b><br>Harga cabai rawit di sejumlah pasar tradisional Kota Malang melonjak hingga 40 persen sejak awal Agustus. Pedagang menyebutkan kenaikan ini disebabkan oleh gagal panen akibat cuaca ekstrem di sentra produksi cabai. Kondisi ini membuat sejumlah ibu rumah tangga mengeluhkan naiknya biaya belanja harian.`,
+    answers: {
+      apa: ["harga cabai melonjak","harga cabai rawit melonjak tajam"],
+      dimana: ["pasar tradisional kota malang","kota malang"],
+      kapan: ["sejak awal agustus","awal agustus"],
+      siapa: ["pedagang","ibu rumah tangga"],
+      mengapa: ["gagal panen akibat cuaca ekstrem","cuaca ekstrem di sentra produksi cabai"],
+      bagaimana: ["melonjak hingga 40 persen","naik 40 persen"]
+    }
+  }
+];
+
+let detOrder = [];
+let detIndex = 0;
+const adiksimbaFields = [
+  {key:'apa', label:'Apa (What)'},
+  {key:'dimana', label:'Di mana (Where)'},
+  {key:'kapan', label:'Kapan (When)'},
+  {key:'siapa', label:'Siapa (Who)'},
+  {key:'mengapa', label:'Mengapa (Why)'},
+  {key:'bagaimana', label:'Bagaimana (How)'}
+];
+
+function startDetective(){
+  detOrder = shuffle([...Array(detectiveBank.length).keys()]);
+  detIndex = 0;
+  hideAll();
+  document.getElementById('screen-detective').style.display='block';
+  renderDetective();
+}
+
+function renderDetective(){
+  const data = detectiveBank[detOrder[detIndex]];
+  document.getElementById('detProgressLabel').textContent = (detIndex+1)+"/"+detOrder.length;
+  document.getElementById('detText').innerHTML = data.text;
+  const grid = document.getElementById('detGrid');
+  grid.innerHTML = '';
+  adiksimbaFields.forEach(f=>{
+    const div = document.createElement('div');
+    div.className = 'adiksimba-card';
+    div.id = 'det-'+f.key;
+    div.innerHTML = `<label>${f.label}</label><input type="text" id="input-${f.key}" placeholder="Jawabanmu...">`;
+    grid.appendChild(div);
+  });
+  document.getElementById('detFeedback').className='feedback';
+  document.getElementById('detFeedback').textContent='';
+  document.getElementById('detCheckBtn').style.display='inline-block';
+  document.getElementById('detNextBtn').style.display='none';
+}
+
+function normalize(s){
+  return s.toLowerCase().trim().replace(/[.,]/g,'');
+}
+
+function checkDetective(){
+  const data = detectiveBank[detOrder[detIndex]];
+  let correctCount = 0;
+  adiksimbaFields.forEach(f=>{
+    const rawVal = document.getElementById('input-'+f.key).value;
+    const val = normalize(rawVal);
+    const card = document.getElementById('det-'+f.key);
+    const accepted = data.answers[f.key].map(normalize);
+    const isCorrect = val.length>0 && accepted.some(a => val.includes(a) || a.includes(val));
+    card.classList.remove('correct','wrong');
+    if(isCorrect){
+      card.classList.add('correct');
+      correctCount++;
+    } else {
+      card.classList.add('wrong');
+    }
+    logAnswer({
+      mode: 'Detektif ADIKSIMBA',
+      bagian: 'Teks ' + (detIndex+1) + '/' + detOrder.length,
+      item: f.label,
+      jawabanSiswa: rawVal || '(kosong)',
+      kunci: data.answers[f.key][0],
+      status: isCorrect ? 'Benar' : 'Salah'
+    });
+  });
+  const fb = document.getElementById('detFeedback');
+  const pts = correctCount*5;
+  state.score += pts;
+  saveHud();
+  if(correctCount === adiksimbaFields.length){
+    fb.className = 'feedback show good';
+    fb.textContent = `✅ Sempurna! Semua unsur ADIKSIMBA berhasil ditemukan (+${pts} poin).`;
+  } else {
+    fb.className = 'feedback show bad';
+    fb.textContent = `Ditemukan ${correctCount}/6 unsur dengan benar (+${pts} poin). Kotak merah menandakan jawaban perlu diperbaiki — coba baca ulang teks beritanya!`;
+  }
+  document.getElementById('detCheckBtn').style.display='none';
+  document.getElementById('detNextBtn').style.display='inline-block';
+}
+
+function nextDetective(){
+  detIndex++;
+  if(detIndex >= detOrder.length){
+    hideAll();
+    document.getElementById('screen-result').style.display='block';
+    document.getElementById('resultEmoji').textContent = '🔍';
+    document.getElementById('resultTitle').textContent = 'Investigasi Selesai!';
+    document.getElementById('resultScore').textContent = 'Skor total: '+state.score;
+    document.getElementById('resultDesc').textContent = 'Kamu telah menganalisis semua teks berita dan menemukan unsur ADIKSIMBA-nya.';
+    state.lastMode = 'detective';
+  } else {
+    renderDetective();
+  }
+}
+
+/* ===================== MATCHING (COCOKKAN ISTILAH) ===================== */
+const matchBank = [
+  {term:'Judul Berita', def:'Bagian yang memuat nama/inti singkat suatu berita, biasanya ditulis paling atas'},
+  {term:'Teras Berita (Lead)', def:'Paragraf pembuka yang merangkum inti peristiwa, biasanya memuat unsur 5W+1H'},
+  {term:'Tubuh Berita', def:'Bagian yang menjelaskan peristiwa secara lebih rinci setelah teras berita'},
+  {term:'Ekor Berita', def:'Bagian informasi tambahan yang paling kurang penting dan aman dipotong'},
+  {term:'Piramida Terbalik', def:'Pola penyajian berita dari informasi terpenting ke informasi kurang penting'},
+  {term:'Aktual', def:'Sifat berita yang informasinya baru terjadi dan masih hangat dibicarakan'},
+  {term:'Faktual', def:'Sifat berita yang berdasarkan kejadian nyata, bukan karangan atau opini'},
+  {term:'ADIKSIMBA', def:'Singkatan unsur berita: Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana'}
+];
+
+let matchState = { termOrder:[], defOrder:[], matchedCount:0, selectedTermIdx:null };
+
+function startMatching(){
+  matchState.termOrder = shuffle([...Array(matchBank.length).keys()]);
+  matchState.defOrder = shuffle([...Array(matchBank.length).keys()]);
+  matchState.matchedCount = 0;
+  matchState.selectedTermIdx = null;
+  hideAll();
+  document.getElementById('screen-matching').style.display='block';
+  renderMatching();
+}
+
+function renderMatching(){
+  document.getElementById('matchProgressLabel').textContent = matchState.matchedCount+"/"+matchBank.length;
+  const termsDiv = document.getElementById('matchTerms');
+  const defsDiv = document.getElementById('matchDefs');
+  termsDiv.innerHTML = '';
+  defsDiv.innerHTML = '';
+  matchState.termOrder.forEach(idx=>{
+    const btn = document.createElement('button');
+    btn.className = 'match-item';
+    btn.textContent = matchBank[idx].term;
+    btn.dataset.idx = idx;
+    btn.onclick = () => clickTerm(idx, btn);
+    termsDiv.appendChild(btn);
+  });
+  matchState.defOrder.forEach(idx=>{
+    const btn = document.createElement('button');
+    btn.className = 'match-item';
+    btn.textContent = matchBank[idx].def;
+    btn.dataset.idx = idx;
+    btn.onclick = () => clickDef(idx, btn);
+    defsDiv.appendChild(btn);
+  });
+  document.getElementById('matchFeedback').className='feedback';
+  document.getElementById('matchFeedback').textContent='';
+}
+
+function clickTerm(idx, btnEl){
+  if(btnEl.classList.contains('matched')) return;
+  document.querySelectorAll('#matchTerms .match-item').forEach(b=>b.classList.remove('selected'));
+  btnEl.classList.add('selected');
+  matchState.selectedTermIdx = idx;
+}
+
+function clickDef(idx, btnEl){
+  if(btnEl.classList.contains('matched')) return;
+  if(matchState.selectedTermIdx === null) return;
+  const termIdx = matchState.selectedTermIdx;
+  const termBtn = document.querySelector(`#matchTerms .match-item[data-idx="${termIdx}"]`);
+  const isCorrect = (termIdx === idx);
+  const fb = document.getElementById('matchFeedback');
+  logAnswer({
+    mode: 'Cocokkan Istilah',
+    bagian: '-',
+    item: matchBank[termIdx].term,
+    jawabanSiswa: matchBank[idx].def,
+    kunci: matchBank[termIdx].def,
+    status: isCorrect ? 'Benar' : 'Salah'
+  });
+  if(isCorrect){
+    termBtn.classList.remove('selected');
+    termBtn.classList.add('matched');
+    btnEl.classList.add('matched');
+    matchState.matchedCount++;
+    state.score += 15;
+    saveHud();
+    document.getElementById('matchProgressLabel').textContent = matchState.matchedCount+"/"+matchBank.length;
+    fb.className = 'feedback show good';
+    fb.textContent = '✅ Cocok! ' + matchBank[termIdx].term + ' = ' + matchBank[termIdx].def;
+    matchState.selectedTermIdx = null;
+    if(matchState.matchedCount === matchBank.length){
+      setTimeout(()=>{
+        hideAll();
+        document.getElementById('screen-result').style.display='block';
+        document.getElementById('resultEmoji').textContent = '🔗';
+        document.getElementById('resultTitle').textContent = 'Semua Istilah Tercocokkan!';
+        document.getElementById('resultScore').textContent = '+' + (matchBank.length*15) + ' poin';
+        document.getElementById('resultDesc').textContent = 'Kamu berhasil mencocokkan semua istilah teks berita dengan definisinya.';
+        state.lastMode = 'matching';
+      }, 900);
+    }
+  } else {
+    termBtn.classList.add('shake');
+    btnEl.classList.add('shake');
+    fb.className = 'feedback show bad';
+    fb.textContent = '❌ Belum cocok, coba lagi!';
+    setTimeout(()=>{
+      termBtn.classList.remove('shake','selected');
+      btnEl.classList.remove('shake');
+    }, 400);
+    matchState.selectedTermIdx = null;
+  }
+}
+
+/* ===================== EDITOR BERITA (CARI KESALAHAN) ===================== */
+const editorBank = [
+  {
+    sentences: [
+      "Wali Kota meresmikan taman kota baru di Jalan Merdeka pada Senin (17/8).",
+      "Taman seluas dua hektare itu dilengkapi area bermain anak dan jogging track.",
+      "Menurutnya taman ini akan diresmikan lagi minggu depan oleh gubernur yang sama pada hari yang sama.",
+      "Warga menyambut baik kehadiran taman tersebut sebagai ruang terbuka hijau baru."
+    ],
+    errorIdx: 2,
+    correction: "Kalimat ini tidak logis/kontradiktif: taman sudah diresmikan Wali Kota pada kalimat pertama, tidak mungkin diresmikan lagi oleh orang & hari yang sama minggu depan. Seharusnya dihapus atau diganti dengan informasi lain yang konsisten dengan fakta di kalimat pertama."
+  },
+  {
+    sentences: [
+      "Dinas Kesehatan mencatat kasus demam berdarah meningkat 20 persen di bulan Juli.",
+      "Kepala Dinas Kesehatan mengimbau warga untuk rutin melakukan 3M (menguras, menutup, mengubur).",
+      "Menurut saya, pemerintah seharusnya lebih tegas menangani masalah ini sejak dulu.",
+      "Ia menambahkan bahwa fogging akan dilakukan di titik-titik rawan mulai pekan depan."
+    ],
+    errorIdx: 2,
+    correction: "Kalimat ini berisi opini pribadi penulis ('Menurut saya') yang tidak sesuai kaidah teks berita — berita harus faktual dan objektif, bukan opini penulis."
+  },
+  {
+    sentences: [
+      "Tim SAR gabungan berhasil mengevakuasi lima pendaki yang tersesat di Gunung Arjuno.",
+      "Proses evakuasi berlangsung selama dua hari dua malam karena medan yang sulit.",
+      "Kelima pendaki dilaporkan dalam kondisi sehat wal afiat tanpa cedera serius.",
+      "Bagaimana caranya tim SAR bisa menemukan pendaki secepat itu padahal medannya sulit sekali?"
+    ],
+    errorIdx: 3,
+    correction: "Kalimat ini berbentuk kalimat tanya retoris yang tidak pada tempatnya dalam teks berita — teks berita menyampaikan fakta secara deklaratif, bukan mengajukan pertanyaan kepada pembaca."
+  }
+];
+
+let editorOrder = [];
+let editorIndex = 0;
+let editorSelectedIdx = null;
+
+function startEditor(){
+  editorOrder = shuffle([...Array(editorBank.length).keys()]);
+  editorIndex = 0;
+  hideAll();
+  document.getElementById('screen-editor').style.display='block';
+  renderEditor();
+}
+
+function renderEditor(){
+  editorSelectedIdx = null;
+  const data = editorBank[editorOrder[editorIndex]];
+  document.getElementById('editorProgressLabel').textContent = (editorIndex+1)+"/"+editorOrder.length;
+  const para = document.getElementById('editorPara');
+  para.innerHTML = '';
+  data.sentences.forEach((s, idx)=>{
+    const span = document.createElement('span');
+    span.className = 'sentence-chip';
+    span.textContent = s + ' ';
+    span.dataset.idx = idx;
+    span.onclick = () => selectSentence(idx);
+    para.appendChild(span);
+  });
+  document.getElementById('editorCorrection').className = 'correction-box';
+  document.getElementById('editorCorrection').textContent = '';
+  document.getElementById('editorFeedback').className='feedback';
+  document.getElementById('editorFeedback').textContent='';
+  document.getElementById('editorCheckBtn').style.display='inline-block';
+  document.getElementById('editorNextBtn').style.display='none';
+}
+
+function selectSentence(idx){
+  editorSelectedIdx = idx;
+  document.querySelectorAll('#editorPara .sentence-chip').forEach((el,i)=>{
+    el.classList.toggle('selected', i===idx);
+  });
+}
+
+function checkEditor(){
+  if(editorSelectedIdx === null){
+    const fb = document.getElementById('editorFeedback');
+    fb.className = 'feedback show bad';
+    fb.textContent = '⚠️ Pilih dulu kalimat yang menurutmu salah, ya!';
+    return;
+  }
+  const data = editorBank[editorOrder[editorIndex]];
+  const isCorrect = (editorSelectedIdx === data.errorIdx);
+  const chips = document.querySelectorAll('#editorPara .sentence-chip');
+  chips.forEach((el,i)=>{
+    el.classList.remove('selected');
+    if(i === data.errorIdx) el.classList.add('correct-mark');
+    else if(i === editorSelectedIdx) el.classList.add('wrong-mark');
+  });
+  const fb = document.getElementById('editorFeedback');
+  if(isCorrect){
+    state.score += 20;
+    fb.className = 'feedback show good';
+    fb.textContent = '✅ Tepat! Kamu menemukan kalimat yang bermasalah.';
+  } else {
+    fb.className = 'feedback show bad';
+    fb.textContent = '❌ Belum tepat. Kalimat yang bermasalah ditandai hijau di bawah ini.';
+  }
+  const corrBox = document.getElementById('editorCorrection');
+  corrBox.className = 'correction-box show';
+  corrBox.textContent = '📌 Penjelasan: ' + data.correction;
+  logAnswer({
+    mode: 'Editor Berita',
+    bagian: (editorIndex+1) + '/' + editorOrder.length,
+    item: 'Kalimat bermasalah dalam paragraf',
+    jawabanSiswa: data.sentences[editorSelectedIdx],
+    kunci: data.sentences[data.errorIdx],
+    status: isCorrect ? 'Benar' : 'Salah'
+  });
+  saveHud();
+  document.getElementById('editorCheckBtn').style.display='none';
+  document.getElementById('editorNextBtn').style.display='inline-block';
+}
+
+function nextEditor(){
+  editorIndex++;
+  if(editorIndex >= editorOrder.length){
+    hideAll();
+    document.getElementById('screen-result').style.display='block';
+    document.getElementById('resultEmoji').textContent = '✏️';
+    document.getElementById('resultTitle').textContent = 'Tugas Editor Selesai!';
+    document.getElementById('resultScore').textContent = 'Skor total: '+state.score;
+    document.getElementById('resultDesc').textContent = 'Kamu telah memeriksa semua contoh teks berita seperti editor sungguhan.';
+    state.lastMode = 'editor';
+  } else {
+    renderEditor();
+  }
+}
+
+/* ===================== TIME ATTACK (BENAR/SALAH) ===================== */
+const taBank = [
+  {stmt:"Teks berita harus bersifat aktual dan faktual.", answer:true},
+  {stmt:"Struktur teks berita disusun dari informasi paling tidak penting ke paling penting.", answer:false},
+  {stmt:"Teras berita (lead) biasanya memuat unsur 5W+1H.", answer:true},
+  {stmt:"ADIKSIMBA adalah singkatan dari Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana.", answer:true},
+  {stmt:"Opini pribadi penulis boleh dimasukkan bebas ke dalam teks berita.", answer:false},
+  {stmt:"Kalimat langsung dalam berita ditandai dengan tanda kutip.", answer:true},
+  {stmt:"Ekor berita adalah bagian paling penting yang tidak boleh dihilangkan.", answer:false},
+  {stmt:"Konjungsi 'kemudian' dan 'setelah itu' termasuk konjungsi temporal.", answer:true},
+  {stmt:"Kata kerja mental seperti 'menduga' dan 'menyimpulkan' sering muncul dalam kutipan narasumber.", answer:true},
+  {stmt:"Piramida terbalik berarti judul diletakkan di bagian paling bawah teks berita.", answer:false},
+  {stmt:"Berita yang faktual boleh berdasarkan karangan atau rekaan penulis.", answer:false},
+  {stmt:"Menyunting berita bertujuan memastikan keakuratan dan kejelasan sebelum dipublikasikan.", answer:true}
+];
+
+let taOrder = [];
+let taIndex = 0;
+let taScore = 0;
+let taTimer = null;
+let taTimeLeft = 0;
+const TA_DURATION = 8000; // ms per question
+let taAnswered = false;
+
+function startTimeAttack(){
+  taOrder = shuffle([...Array(taBank.length).keys()]).slice(0,8);
+  taIndex = 0;
+  taScore = 0;
+  hideAll();
+  document.getElementById('screen-timeattack').style.display='block';
+  renderTimeAttack();
+}
+
+function renderTimeAttack(){
+  taAnswered = false;
+  document.getElementById('taProgressLabel').textContent = (taIndex+1)+"/"+taOrder.length;
+  document.getElementById('taScoreStrip').textContent = 'Skor ronde ini: ' + taScore;
+  document.getElementById('taQuestion').textContent = taBank[taOrder[taIndex]].stmt;
+  document.getElementById('taFeedback').className='feedback';
+  document.getElementById('taFeedback').textContent='';
+  document.getElementById('taNextBtn').style.display='none';
+  document.getElementById('taTrueBtn').disabled = false;
+  document.getElementById('taFalseBtn').disabled = false;
+  startTaTimer();
+}
+
+function startTaTimer(){
+  clearInterval(taTimer);
+  taTimeLeft = TA_DURATION;
+  const bar = document.getElementById('taTimerBar');
+  bar.style.width = '100%';
+  const step = 100;
+  taTimer = setInterval(()=>{
+    taTimeLeft -= step;
+    const pct = Math.max(0, (taTimeLeft/TA_DURATION)*100);
+    bar.style.width = pct + '%';
+    if(taTimeLeft <= 0){
+      clearInterval(taTimer);
+      if(!taAnswered) timeUpTimeAttack();
+    }
+  }, step);
+}
+
+function timeUpTimeAttack(){
+  taAnswered = true;
+  document.getElementById('taTrueBtn').disabled = true;
+  document.getElementById('taFalseBtn').disabled = true;
+  const data = taBank[taOrder[taIndex]];
+  const fb = document.getElementById('taFeedback');
+  fb.className = 'feedback show bad';
+  fb.textContent = '⏰ Waktu habis! Jawaban yang benar: ' + (data.answer ? 'BENAR' : 'SALAH');
+  logAnswer({
+    mode: 'Tebak Cepat B/S',
+    bagian: (taIndex+1) + '/' + taOrder.length,
+    item: data.stmt,
+    jawabanSiswa: '(waktu habis)',
+    kunci: data.answer ? 'BENAR' : 'SALAH',
+    status: 'Waktu habis'
+  });
+  document.getElementById('taNextBtn').style.display='inline-block';
+}
+
+function answerTimeAttack(userAnswer){
+  if(taAnswered) return;
+  taAnswered = true;
+  clearInterval(taTimer);
+  document.getElementById('taTrueBtn').disabled = true;
+  document.getElementById('taFalseBtn').disabled = true;
+  const data = taBank[taOrder[taIndex]];
+  const isCorrect = (userAnswer === data.answer);
+  const fb = document.getElementById('taFeedback');
+  let pts = 0;
+  if(isCorrect){
+    // faster answer = more points (based on remaining time)
+    pts = 5 + Math.round((taTimeLeft/TA_DURATION)*10);
+    taScore += pts;
+    state.score += pts;
+    fb.className = 'feedback show good';
+    fb.textContent = `✅ Benar! (+${pts} poin, makin cepat makin besar poinnya)`;
+  } else {
+    fb.className = 'feedback show bad';
+    fb.textContent = '❌ Kurang tepat. Jawaban yang benar: ' + (data.answer ? 'BENAR' : 'SALAH');
+  }
+  logAnswer({
+    mode: 'Tebak Cepat B/S',
+    bagian: (taIndex+1) + '/' + taOrder.length,
+    item: data.stmt,
+    jawabanSiswa: userAnswer ? 'BENAR' : 'SALAH',
+    kunci: data.answer ? 'BENAR' : 'SALAH',
+    status: isCorrect ? 'Benar' : 'Salah'
+  });
+  saveHud();
+  document.getElementById('taScoreStrip').textContent = 'Skor ronde ini: ' + taScore;
+  document.getElementById('taNextBtn').style.display='inline-block';
+}
+
+function nextTimeAttack(){
+  taIndex++;
+  if(taIndex >= taOrder.length){
+    clearInterval(taTimer);
+    hideAll();
+    document.getElementById('screen-result').style.display='block';
+    document.getElementById('resultEmoji').textContent = '⏱️';
+    document.getElementById('resultTitle').textContent = 'Tebak Cepat Selesai!';
+    document.getElementById('resultScore').textContent = '+' + taScore + ' poin';
+    document.getElementById('resultDesc').textContent = 'Kecepatan dan ketepatanmu menjawab sudah tercatat!';
+    state.lastMode = 'timeattack';
+  } else {
+    renderTimeAttack();
+  }
+}
+
+/* ===================== TULIS BERITA (WRITING) ===================== */
+const writingBank = [
+  {
+    tema: 'Kegiatan Sekolah',
+    fakta: {
+      apa: 'Lomba peringatan HUT Kemerdekaan RI ke-81',
+      siapa: 'Siswa-siswi SMA Negeri 2 Semarang',
+      kapan: 'Sabtu, 15 Agustus 2026',
+      dimana: 'Lapangan SMA Negeri 2 Semarang',
+      mengapa: 'Memupuk semangat nasionalisme dan kekompakan siswa',
+      bagaimana: 'Diikuti lebih dari 300 siswa dengan berbagai lomba seperti balap karung, tarik tambang, dan cerdas cermat'
+    },
+    keywords: {
+      apa: ['lomba','hut','kemerdekaan','17 agustus','ri ke-81'],
+      siapa: ['siswa','sma negeri 2 semarang','sman 2 semarang'],
+      kapan: ['15 agustus','sabtu'],
+      dimana: ['lapangan'],
+      mengapa: ['nasionalisme','kekompakan','semangat'],
+      bagaimana: ['300 siswa','balap karung','tarik tambang','cerdas cermat']
+    }
+  },
+  {
+    tema: 'Prestasi Akademik',
+    fakta: {
+      apa: 'Tim olimpiade sains meraih medali emas',
+      siapa: 'Tiga siswa kelas XI IPA SMA Negeri 2 Semarang',
+      kapan: 'Kamis, 13 Agustus 2026',
+      dimana: 'Olimpiade Sains Nasional tingkat provinsi di Semarang',
+      mengapa: 'Hasil pembinaan intensif selama tiga bulan oleh guru pembimbing',
+      bagaimana: 'Berhasil mengungguli 45 sekolah lain se-Jawa Tengah'
+    },
+    keywords: {
+      apa: ['olimpiade sains','medali emas','juara'],
+      siapa: ['tiga siswa','kelas xi ipa','sma negeri 2 semarang'],
+      kapan: ['13 agustus','kamis'],
+      dimana: ['semarang','provinsi'],
+      mengapa: ['pembinaan','tiga bulan','latihan'],
+      bagaimana: ['45 sekolah','jawa tengah','mengungguli']
+    }
+  },
+  {
+    tema: 'Lingkungan Hidup',
+    fakta: {
+      apa: 'Program penanaman 200 pohon di lingkungan sekolah',
+      siapa: 'OSIS bekerja sama dengan Dinas Lingkungan Hidup Kota Semarang',
+      kapan: 'Minggu, 16 Agustus 2026',
+      dimana: 'Area belakang dan taman SMA Negeri 2 Semarang',
+      mengapa: 'Mengurangi polusi udara dan mendukung program sekolah Adiwiyata',
+      bagaimana: 'Melibatkan seluruh siswa kelas X hingga XII secara bergotong royong'
+    },
+    keywords: {
+      apa: ['200 pohon','penanaman','penghijauan'],
+      siapa: ['osis','dinas lingkungan hidup'],
+      kapan: ['16 agustus','minggu'],
+      dimana: ['taman','belakang sekolah'],
+      mengapa: ['polusi','adiwiyata'],
+      bagaimana: ['gotong royong','kelas x','kelas xii']
+    }
+  }
+];
+
+let writeOrder = [];
+let writeIndex = 0;
+
+function startWriting(){
+  writeOrder = shuffle([...Array(writingBank.length).keys()]);
+  writeIndex = 0;
+  hideAll();
+  document.getElementById('screen-writing').style.display='block';
+  renderWriting();
+}
+
+function renderWriting(){
+  const data = writingBank[writeOrder[writeIndex]];
+  document.getElementById('writeProgressLabel').textContent = (writeIndex+1)+"/"+writeOrder.length;
+  const grid = document.getElementById('writeFaktaGrid');
+  grid.innerHTML = '';
+  const faktaLabels = {apa:'Apa', siapa:'Siapa', kapan:'Kapan', dimana:'Di mana', mengapa:'Mengapa', bagaimana:'Bagaimana'};
+  Object.keys(faktaLabels).forEach(k=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<b>${faktaLabels[k]}:</b> ${data.fakta[k]}`;
+    grid.appendChild(div);
+  });
+  ['writeJudul','writeTeras','writeTubuh','writeEkor'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  updateWordCount('writeJudul','wcJudul');
+  updateWordCount('writeTeras','wcTeras');
+  updateWordCount('writeTubuh','wcTubuh');
+  updateWordCount('writeEkor','wcEkor');
+  document.getElementById('writeChecklistBox').style.display = 'none';
+  document.getElementById('writeFeedback').className = 'feedback';
+  document.getElementById('writeFeedback').textContent = '';
+  document.getElementById('writeCheckBtn').style.display = 'inline-block';
+  document.getElementById('writeNextBtn').style.display = 'none';
+}
+
+function countWords(text){
+  const t = text.trim();
+  if(!t) return 0;
+  return t.split(/\s+/).length;
+}
+
+function updateWordCount(taId, labelId){
+  const n = countWords(document.getElementById(taId).value);
+  document.getElementById(labelId).textContent = n + ' kata';
+}
+
+function checkWriting(){
+  const judul = document.getElementById('writeJudul').value.trim();
+  const teras = document.getElementById('writeTeras').value.trim();
+  const tubuh = document.getElementById('writeTubuh').value.trim();
+  const ekor = document.getElementById('writeEkor').value.trim();
+  const data = writingBank[writeOrder[writeIndex]];
+
+  const fullText = normalize([judul, teras, tubuh, ekor].join(' '));
+
+  const structChecks = [
+    {label:'Judul diisi dan ringkas (maks. 15 kata)', pass: judul.length>0 && countWords(judul)<=15},
+    {label:'Teras berita cukup ringkas & jelas (minimal 12 kata)', pass: countWords(teras)>=12},
+    {label:'Tubuh berita cukup rinci (minimal 20 kata)', pass: countWords(tubuh)>=20},
+    {label:'Ekor berita terisi (minimal 4 kata)', pass: countWords(ekor)>=4}
+  ];
+
+  const faktaLabels = {apa:'Apa', siapa:'Siapa', kapan:'Kapan', dimana:'Di mana', mengapa:'Mengapa', bagaimana:'Bagaimana'};
+  let faktaMatches = 0;
+  const faktaChecks = Object.keys(faktaLabels).map(k=>{
+    const found = data.keywords[k].some(kw => fullText.includes(normalize(kw)));
+    if(found) faktaMatches++;
+    return {label:'Fakta "'+faktaLabels[k]+'" tersirat dalam tulisan', pass: found};
+  });
+
+  const structPass = structChecks.filter(c=>c.pass).length;
+  const pts = structPass*5 + faktaMatches*5;
+  state.score += pts;
+  saveHud();
+
+  const ul = document.getElementById('writeChecklist');
+  ul.innerHTML = '';
+  [...structChecks, ...faktaChecks].forEach(c=>{
+    const li = document.createElement('li');
+    li.className = c.pass ? 'pass' : 'fail';
+    li.textContent = (c.pass ? '✅ ' : '⚠️ ') + c.label;
+    ul.appendChild(li);
+  });
+  document.getElementById('writeChecklistBox').style.display = 'block';
+
+  const fb = document.getElementById('writeFeedback');
+  fb.className = 'feedback show ' + (structPass===4 && faktaMatches>=4 ? 'good' : 'bad');
+  fb.textContent = `Kelengkapan struktur: ${structPass}/4 • Fakta tersampaikan: ${faktaMatches}/6 (+${pts} poin). Tulisanmu sudah dikirim ke guru untuk dinilai lebih lanjut.`;
+
+  logAnswer({
+    mode: 'Tulis Berita',
+    bagian: (writeIndex+1) + '/' + writeOrder.length + ' (Tema: ' + data.tema + ')',
+    item: 'Judul: ' + judul + ' | Teras: ' + teras + ' | Tubuh: ' + tubuh + ' | Ekor: ' + ekor,
+    jawabanSiswa: judul + '\n' + teras + '\n' + tubuh + '\n' + ekor,
+    kunci: 'Fakta wajib dimuat: ' + Object.values(data.fakta).join(' | '),
+    status: `Struktur ${structPass}/4, Fakta ${faktaMatches}/6`
+  });
+
+  document.getElementById('writeCheckBtn').style.display = 'none';
+  document.getElementById('writeNextBtn').style.display = 'inline-block';
+}
+
+function nextWriting(){
+  writeIndex++;
+  if(writeIndex >= writeOrder.length){
+    hideAll();
+    document.getElementById('screen-result').style.display='block';
+    document.getElementById('resultEmoji').textContent = '✍️';
+    document.getElementById('resultTitle').textContent = 'Latihan Menulis Selesai!';
+    document.getElementById('resultScore').textContent = 'Skor total: '+state.score;
+    document.getElementById('resultDesc').textContent = 'Semua tulisan beritamu sudah tersimpan dan siap dinilai gurumu sesuai rubrik menulis teks berita.';
+    state.lastMode = 'writing';
+  } else {
+    renderWriting();
+  }
+}
+
+/* ===================== RESULT RETRY ===================== */
+function retryLast(){
+  if(state.lastMode === 'quiz') startQuiz();
+  else if(state.lastMode === 'drag') startDrag();
+  else if(state.lastMode === 'detective') startDetective();
+  else if(state.lastMode === 'matching') startMatching();
+  else if(state.lastMode === 'editor') startEditor();
+  else if(state.lastMode === 'timeattack') startTimeAttack();
+  else if(state.lastMode === 'writing') startWriting();
+  else goMenu();
+}
+
+/* ===================== INIT ===================== */
+saveHud();
+updateConnStatus();
+hideAll();
+document.getElementById('screen-start').style.display = 'block';
+</script>
+</body>
+</html>
