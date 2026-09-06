@@ -1,0 +1,3610 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIGAP BERITA — Simulasi Game Aktif Pembelajaran Berita</title>
+<style>
+  :root{
+    /* Tema AURORA PELANGI */
+    --bg1:#140f2e; --bg2:#0b1027;
+    --aurora-1:#7c3aed;  /* ungu   */
+    --aurora-2:#06b6d4;  /* toska  */
+    --aurora-3:#ec4899;  /* merah muda */
+    --aurora-4:#f59e0b;  /* jingga */
+    --accent:#fbbf24; --accent2:#38bdf8;
+    --good:#22c55e; --bad:#ef4444;
+    --card:#ffffff; --text:#1e293b; --muted:#64748b;
+    --radius:16px;
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{background-color:var(--bg2);}
+  body{
+    margin:0; min-height:100vh; position:relative; isolation:isolate;
+    background-color:var(--bg2);
+    background:
+      radial-gradient(120% 90% at 12% 0%,  rgba(124,58,237,.55) 0%, rgba(124,58,237,0) 55%),
+      radial-gradient(100% 80% at 92% 8%,  rgba(6,182,212,.45)  0%, rgba(6,182,212,0)  55%),
+      radial-gradient(110% 85% at 78% 96%, rgba(236,72,153,.40) 0%, rgba(236,72,153,0) 58%),
+      radial-gradient(90%  70% at 8%  92%, rgba(245,158,11,.32) 0%, rgba(245,158,11,0) 55%),
+      linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%);
+    background-attachment: fixed;
+    color:var(--text);
+    padding:20px;
+  }
+  /* Lapisan aurora yang bergerak sangat pelan (memakai transform saja agar ringan) */
+  body::before{
+    content:''; position:fixed; inset:-25%; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(38% 30% at 30% 35%, rgba(56,189,248,.30) 0%, transparent 70%),
+      radial-gradient(34% 28% at 72% 62%, rgba(168,85,247,.28) 0%, transparent 70%),
+      radial-gradient(30% 26% at 52% 18%, rgba(244,114,182,.22) 0%, transparent 70%);
+    filter: blur(28px);
+    animation: auroraDrift 28s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes auroraDrift{
+    0%   { transform: translate3d(-3%, -2%, 0) scale(1); }
+    50%  { transform: translate3d(3%, 2%, 0)  scale(1.06); }
+    100% { transform: translate3d(-2%, 3%, 0) scale(1.02); }
+  }
+  .app{max-width:900px; margin:0 auto;}
+  header.top{
+    text-align:center; color:#fff; margin-bottom:18px;
+    text-shadow:0 2px 12px rgba(5,8,25,.65);
+  }
+  header.top h1{
+    font-size:2rem; margin:0 0 6px; letter-spacing:.5px;
+    background:linear-gradient(95deg,#fde047 0%,#f9a8d4 32%,#a5b4fc 64%,#5eead4 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    -webkit-text-fill-color:transparent; text-shadow:none;
+    filter:drop-shadow(0 2px 10px rgba(5,8,25,.55));
+  }
+  header.top p{margin:0; color:#e2e8f0; font-size:.95rem;}
+
+  .hud{
+    display:flex; justify-content:space-between; align-items:center;
+    background:rgba(15,12,45,.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.22);
+    border-radius:14px; padding:10px 16px; margin-bottom:18px; color:#fff;
+    font-size:.9rem; flex-wrap:wrap; gap:8px;
+  }
+  .hud .stat{display:flex; gap:6px; align-items:center;}
+  .hud .stat b{font-size:1.1rem; color:var(--accent);}
+  .badge{
+    background:linear-gradient(135deg,var(--accent),#fb923c);
+    padding:3px 10px; border-radius:999px; font-weight:700; color:#1a1200;
+  }
+
+  .card{
+    background:var(--card); border-radius:var(--radius);
+    padding:26px; box-shadow:0 22px 48px -14px rgba(10,6,40,.6);
+    margin-bottom:18px; position:relative; overflow:hidden;
+  }
+  /* Pita pelangi tipis di tepi atas tiap kartu */
+  .card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg,var(--aurora-1),var(--aurora-2),var(--aurora-3),var(--aurora-4));
+  }
+
+  /* MENU */
+  .menu-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:16px;
+  }
+  .menu-item{
+    border:2px solid #e2e8f0; border-radius:14px; padding:18px;
+    cursor:pointer; transition:.15s; text-align:center; background:#f8fafc;
+  }
+  .menu-item:hover{border-color:var(--accent2); transform:translateY(-3px); box-shadow:0 10px 20px -8px rgba(56,189,248,.4);}
+  .menu-item .emoji{font-size:2.2rem; display:block; margin-bottom:8px;}
+  .menu-item h3{margin:0 0 6px; font-size:1.05rem;}
+  .menu-item p{margin:0; font-size:.82rem; color:var(--muted);}
+  .menu-item .lock{color:var(--muted); font-size:.75rem;}
+  .menu-item{position:relative;}
+  .mode-badge{
+    position:absolute; top:8px; right:8px; font-size:.62rem; font-weight:800; letter-spacing:.5px;
+    padding:3px 7px; border-radius:999px; color:#fff; text-transform:uppercase;
+  }
+  .badge-s1{background:#2563eb;} .badge-s2{background:#d97706;}
+  .mode-nilai{
+    margin-top:8px; font-size:.76rem; font-weight:700; border-radius:8px; padding:5px 8px; display:none;
+  }
+  .mode-nilai.tuntas{background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;}
+  .mode-nilai.belum{background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;}
+  .ptk-table tr.row-s1 td:first-child{border-left:4px solid #2563eb;}
+  .ptk-table tr.row-s2 td:first-child{border-left:4px solid #d97706;}
+  .tabel-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .tabel-scroll .ptk-table{min-width:560px;}
+  .scroll-hint{
+    display:none; font-size:.72rem; color:var(--muted); margin:4px 0 10px; text-align:right;
+  }
+  @media (max-width:640px){ .scroll-hint{display:block;} }
+
+  /* ---- KOMPONEN TGT ---- */
+  .tgt-hero{
+    background:linear-gradient(135deg,#0f172a,#1e3a8a); color:#e2e8f0; border-radius:14px;
+    padding:16px 18px; margin-bottom:16px;
+  }
+  .tgt-hero .siklus-tag{
+    display:inline-block; font-size:.66rem; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+    padding:4px 10px; border-radius:999px; color:#fff; margin-bottom:8px;
+  }
+  .tgt-hero h3{margin:0 0 4px; font-size:1.12rem; line-height:1.35;}
+  .tgt-hero .tim{font-size:.82rem; color:#93c5fd;}
+  .tgt-steps{
+    display:flex; gap:8px; overflow-x:auto; padding:2px 0 8px; margin-bottom:14px;
+    scrollbar-width:thin; -webkit-overflow-scrolling:touch;
+  }
+  .tgt-step{
+    flex:0 0 auto; min-width:112px; border:2px solid #e2e8f0; border-radius:10px; padding:8px 10px;
+    background:#fff; text-align:left;
+  }
+  .tgt-step .no{
+    display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
+    border-radius:50%; background:#e2e8f0; color:#475569; font-size:.7rem; font-weight:800; margin-bottom:5px;
+  }
+  .tgt-step .nm{font-size:.76rem; font-weight:700; color:var(--muted); line-height:1.3;}
+  .tgt-step.aktif{border-color:var(--accent2); background:#eff6ff;}
+  .tgt-step.aktif .no{background:var(--accent2); color:#fff;}
+  .tgt-step.aktif .nm{color:#1e3a8a;}
+  .tgt-step.lewat{border-color:#bbf7d0; background:#f0fdf4;}
+  .tgt-step.lewat .no{background:var(--good); color:#fff;}
+  .tgt-step.lewat .nm{color:#166534;}
+  .tgt-panel{
+    border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; margin-bottom:14px; background:#fff;
+  }
+  .tgt-panel h4{
+    margin:0 0 10px; font-size:.9rem; display:flex; align-items:center; gap:7px;
+  }
+  .tgt-panel ul{margin:0; padding-left:20px;}
+  .tgt-panel li{font-size:.86rem; line-height:1.65; margin-bottom:6px; color:#334155;}
+  .tgt-panel.presentasi{background:#f8fafc; border-left:4px solid var(--accent2);}
+  .tgt-panel.tim{background:#fffbeb; border-left:4px solid #f59e0b;}
+  .tgt-poin-tabel{width:100%; border-collapse:collapse; font-size:.8rem;}
+  .tgt-poin-tabel th,.tgt-poin-tabel td{border:1px solid #e2e8f0; padding:6px 8px; text-align:center;}
+  .tgt-poin-tabel th{background:#f1f5f9; font-size:.72rem; text-transform:uppercase; letter-spacing:.3px; color:#475569;}
+  .rekognisi{
+    border-radius:14px; padding:16px; text-align:center; margin:14px 0;
+    border:2px dashed #cbd5e1; background:#f8fafc;
+  }
+  .rekognisi.super{border-color:#f59e0b; background:linear-gradient(180deg,#fffbeb,#fff);}
+  .rekognisi.hebat{border-color:#22c55e; background:linear-gradient(180deg,#f0fdf4,#fff);}
+  .rekognisi.baik{border-color:#38bdf8; background:linear-gradient(180deg,#eff6ff,#fff);}
+  .rekognisi .piala{font-size:2.4rem; display:block; margin-bottom:4px;}
+  .rekognisi .predikat{font-size:1.15rem; font-weight:900; letter-spacing:.3px;}
+  .rekognisi .rincian{font-size:.83rem; color:var(--muted); margin-top:6px; line-height:1.6;}
+  .rekognisi .poin-besar{font-size:2rem; font-weight:900; color:var(--accent2); line-height:1.1;}
+  .btn{min-height:44px;}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important;}
+  }
+  .menu-ptk-bar{
+    margin-top:16px; background:#fffbeb; border:1px solid #fcd34d; border-radius:12px;
+    padding:12px 14px; font-size:.84rem; color:#78350f; line-height:1.55;
+  }
+
+  h2.section-title{margin-top:0; display:flex; align-items:center; gap:10px;}
+  .pill{
+    background:#eef2ff; color:#4338ca; font-size:.7rem; font-weight:700;
+    padding:3px 10px; border-radius:999px; text-transform:uppercase;
+  }
+
+  .btn{
+    display:inline-block; border:none; border-radius:10px; padding:10px 20px;
+    font-weight:700; cursor:pointer; font-size:.9rem; transition:.15s;
+  }
+  .btn-primary{background:var(--accent2); color:#04202f;}
+  .btn-primary:hover{filter:brightness(1.08); transform:translateY(-1px);}
+  .btn-secondary{background:#e2e8f0; color:#334155;}
+  .btn-secondary:hover{background:#cbd5e1;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+  .btn-row{display:flex; gap:10px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap;}
+
+  /* QUIZ */
+  .progress-bar{
+    height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin-bottom:12px;
+  }
+  .progress-bar > div{
+    height:100%; background:linear-gradient(90deg,var(--accent2),#22d3ee); transition:.3s;
+  }
+  .quiz-topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;}
+  .progress-dots{display:flex; gap:5px; flex-wrap:wrap;}
+  .progress-dots span{
+    width:10px; height:10px; border-radius:50%; background:#e2e8f0; display:inline-block; transition:.2s;
+  }
+  .progress-dots span.done-correct{background:var(--good);}
+  .progress-dots span.done-wrong{background:var(--bad);}
+  .progress-dots span.current{background:var(--accent2); transform:scale(1.3);}
+  .streak-badge{
+    display:flex; align-items:center; gap:4px; background:linear-gradient(135deg,#fff7ed,#ffedd5);
+    border:1px solid #fed7aa; color:#c2410c; font-weight:800; font-size:.8rem;
+    padding:4px 10px; border-radius:999px; transition:transform .2s;
+  }
+  .streak-badge.pulse{animation:streakPulse .4s;}
+  @keyframes streakPulse{0%{transform:scale(1);} 50%{transform:scale(1.25);} 100%{transform:scale(1);}}
+  .question-text{font-size:1.15rem; font-weight:700; margin-bottom:16px; line-height:1.5;}
+  .option{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:12px 16px; margin-bottom:10px;
+    border:2px solid #e2e8f0; border-radius:12px; background:#fff; cursor:pointer;
+    font-size:.95rem; transition:.15s; position:relative; overflow:hidden;
+  }
+  .option .opt-letter{
+    flex-shrink:0; width:26px; height:26px; border-radius:50%; background:#eef2ff; color:#4338ca;
+    font-weight:800; font-size:.8rem; display:flex; align-items:center; justify-content:center;
+    transition:.15s;
+  }
+  .option:hover:not(:disabled){border-color:var(--accent2); background:#f0f9ff; transform:translateX(3px);}
+  .option:active:not(:disabled){transform:scale(.98);}
+  .option.correct{border-color:var(--good); background:#f0fdf4; color:#166534; font-weight:700; animation:popCorrect .35s;}
+  .option.correct .opt-letter{background:var(--good); color:#fff;}
+  .option.wrong{border-color:var(--bad); background:#fef2f2; color:#991b1b; font-weight:700; animation:shakeWrong .35s;}
+  .option.wrong .opt-letter{background:var(--bad); color:#fff;}
+  .option:disabled{cursor:default;}
+  @keyframes popCorrect{0%{transform:scale(1);} 40%{transform:scale(1.04);} 100%{transform:scale(1);}}
+  @keyframes shakeWrong{
+    0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);}
+  }
+  .feedback{
+    margin-top:14px; padding:12px 14px; border-radius:10px; font-size:.9rem; display:none;
+  }
+  .feedback.show{display:block; animation:fadeSlideIn .25s;}
+  .feedback.good{background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;}
+  .feedback.bad{background:#fef2f2; color:#991b1b; border:1px solid #fecaca;}
+  @keyframes fadeSlideIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  /* MASCOT */
+  .mascot-bar{
+    display:flex; align-items:center; gap:10px; background:linear-gradient(135deg,#fef9c3,#fef3c7);
+    border:1px solid #fde68a; border-radius:12px; padding:8px 14px; margin-bottom:16px; font-size:.85rem; color:#78350f;
+  }
+  .mascot-bar .mascot-emoji{font-size:1.6rem; flex-shrink:0;}
+
+  /* DRAG DROP */
+  .news-sample{
+    background:#f8fafc; border-left:4px solid var(--accent2); padding:12px 16px;
+    border-radius:8px; font-size:.88rem; color:#334155; margin-bottom:16px; line-height:1.6;
+  }
+  .pyramid-wrap{display:flex; justify-content:center; margin-bottom:18px;}
+  .pyramid-svg{max-width:260px; width:100%; height:auto;}
+  .pyramid-layer-label{font-size:9px; font-weight:800; fill:#fff; text-anchor:middle;}
+  .dropzone-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px;}
+  .dropzone-list li{
+    background:#fff; border:2px dashed #cbd5e1; border-radius:10px; padding:12px 14px;
+    cursor:grab; font-size:.9rem; display:flex; gap:10px; align-items:flex-start;
+    transition:.2s;
+  }
+  .dropzone-list li:hover{border-color:var(--accent2); box-shadow:0 4px 12px -4px rgba(56,189,248,.35);}
+  .dropzone-list li.dragging{opacity:.4; transform:scale(1.02) rotate(-1deg);}
+  .dropzone-list li .tag{
+    flex-shrink:0; background:var(--accent2); color:#04202f; font-weight:700;
+    font-size:.7rem; padding:2px 8px; border-radius:6px; margin-top:2px;
+  }
+  .dropzone-list li.locked{
+    border-style:solid; border-color:var(--good); background:#f0fdf4; animation:popCorrect .3s;
+  }
+  .dropzone-list li.wrong-pos{border-color:var(--bad); background:#fef2f2;}
+  .dropzone-list li.shake-item{animation:shakeWrong .35s;}
+  .dropzone-list li.distractor-caught{border-style:solid; border-color:var(--good); background:#f0fdf4; animation:popCorrect .3s;}
+  .dropzone-list li.distractor-missed{border-style:solid; border-color:var(--bad); background:#fef2f2;}
+  .dropzone-list li .pos-num{
+    flex-shrink:0; width:22px; height:22px; border-radius:50%; background:#eef2ff; color:#4338ca;
+    font-weight:800; font-size:.75rem; display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  .dropzone-list li .item-actions{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
+  .dropzone-list li .item-actions button{
+    border:none; border-radius:6px; padding:3px 9px; font-size:.72rem; cursor:pointer; font-weight:700;
+  }
+  .dropzone-list li .btn-move-discard{background:#fee2e2; color:#991b1b;}
+  .dropzone-list li .btn-move-back{background:#dcfce7; color:#166534;}
+  .zone-heading{
+    font-size:.8rem; text-transform:uppercase; color:var(--muted); margin:14px 0 8px; letter-spacing:.5px;
+  }
+  .discard-heading{color:#b91c1c;}
+  .discard-list{min-height:56px; background:#fef2f2; border:2px dashed #fecaca; border-radius:10px; padding:8px;}
+  .discard-list:empty::after{
+    content:'Belum ada kalimat yang dipindahkan ke sini.'; color:#b91c1c; font-size:.8rem; opacity:.6; padding:8px;
+  }
+  .discard-list li{border-style:solid; border-color:#fecaca; background:#fff;}
+
+  /* DETECTIVE */
+  .detective-header{
+    display:flex; align-items:center; gap:10px; background:#1e293b; color:#e2e8f0;
+    border-radius:12px 12px 0 0; padding:8px 16px; font-size:.75rem; letter-spacing:.5px;
+    text-transform:uppercase; font-weight:700;
+  }
+  .detective-header .blink-dot{
+    width:8px; height:8px; border-radius:50%; background:#ef4444; animation:blinkDot 1.2s infinite;
+  }
+  @keyframes blinkDot{0%,100%{opacity:1;} 50%{opacity:.2;}}
+  .case-file{
+    background:#fffdf5; border:1px solid #eaddb0; border-top:none; border-radius:0 0 12px 12px;
+    padding:16px; margin-bottom:18px; box-shadow:inset 0 0 0 1px rgba(0,0,0,.02);
+  }
+  .adiksimba-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px; margin-top:16px;
+  }
+  .adiksimba-card{
+    border:2px solid #e2e8f0; border-radius:10px; padding:10px; transition:.2s;
+  }
+  .adiksimba-card label{
+    font-weight:700; font-size:.8rem; color:var(--accent2); display:block; margin-bottom:6px;
+  }
+  .adiksimba-card label .magnifier{margin-right:3px;}
+  .adiksimba-card input{
+    width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:6px 8px; font-size:.85rem;
+  }
+  .adiksimba-card input:focus{outline:none; border-color:var(--accent2);}
+  .adiksimba-card.correct{border-color:var(--good); background:#f0fdf4; animation:popCorrect .3s;}
+  .adiksimba-card.wrong{border-color:var(--bad); background:#fef2f2; animation:shakeWrong .35s;}
+  .det-key-hint{margin-top:6px; font-size:.75rem; color:#b91c1c; line-height:1.35;}
+  .panel-guru{
+    text-align:left; margin-top:12px; background:#f8fafc; border:1px solid #e2e8f0;
+    border-radius:12px; padding:14px;
+  }
+  .panel-guru h4{margin:0 0 6px; font-size:.95rem;}
+  .panel-guru p{margin:0 0 10px; font-size:.8rem; color:var(--muted); line-height:1.55;}
+  .panel-guru label{display:block; font-size:.78rem; font-weight:700; margin-bottom:5px; color:var(--muted);}
+  .panel-guru input{
+    width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-size:.85rem; min-height:44px;
+  }
+  .panel-guru code{background:#e2e8f0; padding:1px 5px; border-radius:4px; font-size:.78rem;}
+  .saved-info{
+    background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px 12px;
+    font-size:.85rem; color:#1e3a8a; line-height:1.5; margin-bottom:12px; text-align:left;
+  }
+  .saved-info .btn{margin-top:8px;}
+  /* ---------- MODE 8: PTK / TGT SIKLUS ---------- */
+  .menu-item-ptk{border-color:#fbbf24; background:linear-gradient(180deg,#fffbeb,#fff);}
+  .menu-item-ptk:hover{border-color:#f59e0b;}
+  .ptk-header{
+    background:linear-gradient(135deg,#0f172a,#1e3a8a); color:#e2e8f0; border-radius:12px;
+    padding:16px 18px; margin-bottom:18px;
+  }
+  .ptk-tag{
+    display:inline-block; background:rgba(251,191,36,.18); color:#fbbf24; font-weight:800;
+    font-size:.7rem; letter-spacing:.5px; padding:4px 10px; border-radius:99px; margin-bottom:10px;
+  }
+  .ptk-judul{
+    margin:0; font-size:.86rem; font-weight:800; line-height:1.55; text-transform:uppercase;
+    letter-spacing:.2px; text-align:left;
+  }
+  .ptk-sub{margin-top:10px; font-size:.75rem; color:#94a3b8;}
+  .case-solved-stamp{
+    display:inline-block; border:4px solid var(--bad); color:var(--bad); font-weight:900;
+    text-transform:uppercase; padding:6px 16px; border-radius:8px; transform:rotate(-8deg);
+    font-size:1rem; letter-spacing:1px; margin-top:10px; animation:stampIn .35s ease-out;
+  }
+  @keyframes stampIn{
+    0%{opacity:0; transform:rotate(-8deg) scale(2);}
+    100%{opacity:1; transform:rotate(-8deg) scale(1);}
+  }
+
+  /* CONFETTI */
+  .confetti-piece{
+    position:fixed; top:-20px; width:8px; height:14px; z-index:9999; pointer-events:none;
+    animation-name:confettiFall; animation-timing-function:ease-in; animation-fill-mode:forwards;
+  }
+  @keyframes confettiFall{
+    0%{transform:translateY(0) rotate(0deg); opacity:1;}
+    100%{transform:translateY(105vh) rotate(540deg); opacity:.9;}
+  }
+
+  /* RESULT */
+  .result-box{text-align:center; padding:20px 0;}
+  .result-box .big-emoji{font-size:3.5rem; margin-bottom:8px;}
+  .result-box .score-num{font-size:2.5rem; font-weight:800; color:var(--accent2); margin:6px 0;}
+  .result-box p{color:var(--muted);}
+
+  /* START / IDENTITY */
+  .start-box{max-width:420px; margin:10px auto; text-align:center;}
+  .start-box .emoji-lg{font-size:3rem; margin-bottom:10px;}
+  .field{text-align:left; margin-bottom:14px;}
+  .field label{display:block; font-weight:700; font-size:.85rem; margin-bottom:6px; color:#334155;}
+  .field input{
+    width:100%; border:2px solid #e2e8f0; border-radius:10px; padding:10px 12px;
+    font-size:.95rem;
+  }
+  .field input:focus{outline:none; border-color:var(--accent2);}
+  .start-box .btn-primary{width:100%; padding:12px; font-size:1rem; margin-top:6px;}
+  .hint{font-size:.78rem; color:var(--muted); margin-top:8px;}
+
+  /* MATCHING */
+  .match-cols{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  .match-col h4{font-size:.8rem; text-transform:uppercase; color:var(--muted); margin:0 0 10px;}
+  .match-item{
+    display:block; width:100%; text-align:left; padding:10px 12px; margin-bottom:8px;
+    border:2px solid #e2e8f0; border-radius:10px; background:#fff; cursor:pointer;
+    font-size:.85rem; transition:.15s;
+  }
+  .match-item:hover{border-color:var(--accent2);}
+  .match-item.selected{border-color:var(--accent2); background:#f0f9ff; font-weight:700;}
+  .match-item.matched{border-color:var(--good); background:#f0fdf4; color:#166534; cursor:default; opacity:.7;}
+  .match-item.shake{border-color:var(--bad); background:#fef2f2; animation:shake .3s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}
+  }
+
+  /* EDITOR BERITA */
+  .editor-para{
+    background:#f8fafc; border-radius:10px; padding:14px 16px; line-height:1.9; font-size:.92rem;
+  }
+  .sentence-chip{
+    cursor:pointer; padding:2px 4px; border-radius:6px; transition:.15s; border-bottom:2px dashed transparent;
+  }
+  .sentence-chip:hover{background:#e0f2fe;}
+  .sentence-chip.selected{background:#fef9c3; border-bottom-color:var(--accent);}
+  .sentence-chip.correct-mark{background:#dcfce7; border-bottom-color:var(--good);}
+  .sentence-chip.wrong-mark{background:#fee2e2; border-bottom-color:var(--bad);}
+  .correction-box{
+    margin-top:14px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px;
+    padding:12px 14px; font-size:.85rem; color:#1e40af; display:none;
+  }
+  .correction-box.show{display:block;}
+
+  /* TIME ATTACK */
+  .timer-bar{height:10px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin-bottom:16px;}
+  .timer-bar > div{height:100%; background:linear-gradient(90deg,#f87171,var(--accent)); transition:width .1s linear;}
+  .tf-question{font-size:1.2rem; font-weight:700; text-align:center; margin:20px 0; line-height:1.5;}
+  .tf-buttons{display:flex; gap:14px; justify-content:center;}
+  .tf-btn{
+    flex:1; max-width:180px; padding:16px; border-radius:14px; border:none; font-weight:800;
+    font-size:1.05rem; cursor:pointer; transition:.15s; color:#fff;
+  }
+  .tf-btn.true-btn{background:var(--good);}
+  .tf-btn.false-btn{background:var(--bad);}
+  .tf-btn:hover{filter:brightness(1.1); transform:translateY(-2px);}
+  .tf-btn:disabled{opacity:.5; cursor:default; transform:none;}
+  .ta-score-strip{text-align:center; color:var(--muted); font-size:.85rem; margin-bottom:6px;}
+
+  /* WRITING (TULIS BERITA) */
+  .fakta-box{
+    background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 16px; margin-bottom:18px;
+  }
+  .fakta-box h4{margin:0 0 10px; font-size:.85rem; color:var(--accent2); text-transform:uppercase;}
+  .fakta-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px 16px;}
+  .fakta-grid div{font-size:.85rem; line-height:1.5;}
+  .fakta-grid b{color:#334155;}
+  .write-field{margin-bottom:16px;}
+  .write-field label{display:flex; justify-content:space-between; font-weight:700; font-size:.85rem; margin-bottom:6px; color:#334155;}
+  .write-field label .wc{font-weight:400; color:var(--muted); font-size:.78rem;}
+  .write-field textarea{
+    width:100%; border:2px solid #e2e8f0; border-radius:10px; padding:10px 12px;
+    font-size:.9rem; font-family:inherit; resize:vertical; min-height:60px;
+  }
+  .write-field textarea:focus{outline:none; border-color:var(--accent2);}
+  .checklist{list-style:none; margin:0; padding:0;}
+  .checklist li{
+    padding:8px 10px; border-radius:8px; margin-bottom:6px; font-size:.85rem;
+    background:#f8fafc; display:flex; gap:8px; align-items:flex-start;
+  }
+  .checklist li.pass{background:#f0fdf4; color:#166534;}
+  .checklist li.fail{background:#fef2f2; color:#991b1b;}
+  .writing-note{
+    background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 14px;
+    font-size:.82rem; color:#1e40af; margin-top:14px;
+  }
+
+  .download-bar{
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15);
+    border-radius:14px; padding:12px 16px; margin-bottom:18px; color:#fff;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    font-size:.85rem;
+  }
+  .download-bar .btn{padding:8px 16px; font-size:.85rem;}
+
+  footer.bottom{
+    text-align:center; color:#e2e8f0; font-size:.78rem; margin-top:20px;
+    text-shadow:0 1px 10px rgba(5,8,25,.85);
+  }
+
+  @media (max-width:600px){
+    .card{padding:18px;}
+    header.top h1{font-size:1.5rem;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>📰 SIGAP BERITA</h1>
+    <p>Simulasi Game Aktif Pembelajaran Berita — Bahasa Indonesia Kelas XI</p>
+  </header>
+
+  <div class="hud" id="hudBar" style="display:none;">
+    <div class="stat">🧑‍🎓 <b id="hudNama">-</b> (<span id="hudKelompok">-</span>)</div>
+    <div class="stat">⭐ Skor: <b id="hudScore">0</b></div>
+    <div class="stat">🔥 Level: <b id="hudLevel">Pemula</b></div>
+    <div class="stat">🏅 Bintang: <b id="hudStars">0</b>/3</div>
+    <div class="stat">🏓 Poin Tim: <b id="hudPoinTim">0</b></div>
+    <div class="badge" id="hudBadge">Belum ada lencana</div>
+  </div>
+
+  <div class="download-bar" id="downloadBar" style="display:none;">
+    <span id="downloadBarLabel">💾 Simpan progres jawabanmu agar bisa dikirim ke guru</span>
+    <button class="btn btn-primary" onclick="downloadResults()">📥 Unduh Hasil (CSV) — cadangan</button>
+    <button class="btn btn-secondary" onclick="resetCurrentStudent()">🔄 Reset Semua Progres</button>
+    <button class="btn btn-secondary" onclick="gantiSiswa()">🚪 Ganti Nama</button>
+  </div>
+
+  <!-- START SCREEN (IDENTITY) -->
+  <div class="card" id="screen-start">
+    <div class="start-box">
+      <div class="emoji-lg">📝</div>
+      <h2 class="section-title" style="justify-content:center;">Isi Data Diri Dahulu</h2>
+      <p style="color:var(--muted); font-size:.88rem; margin-top:-6px;">Nama dan kelompok akan dicatat pada file hasil belajarmu, supaya guru bisa mengecek jawabanmu. Gunakan nama yang <b>sama persis</b> setiap kali masuk agar progresmu tersambung.</p>
+      <div class="field">
+        <label for="inputNama">Nama Lengkap (HURUF KAPITAL)</label>
+        <input type="text" id="inputNama" placeholder="CONTOH: SITI AMINAH" style="text-transform:uppercase;"
+               autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+               oninput="onNamaInput()" onkeydown="if(event.key==='Enter'){submitStart();}">
+      </div>
+      <div class="field">
+        <label for="inputKelompok">Kelompok</label>
+        <input type="text" id="inputKelompok" placeholder="Contoh: Kelompok 3"
+               autocomplete="off" autocorrect="off" spellcheck="false"
+               onkeydown="if(event.key==='Enter'){submitStart();}">
+      </div>
+      <div class="saved-info" id="savedInfo" style="display:none;"></div>
+      <button class="btn btn-primary" onclick="submitStart()">🚀 Mulai Bermain</button>
+      <div class="hint" id="startError" style="color:var(--bad); display:none;">Nama wajib diisi ya!</div>
+      <div class="hint" id="connStatus" style="margin-top:14px;"></div>
+      <button class="btn btn-secondary" type="button" style="margin-top:10px; font-size:.8rem;" onclick="bukaPengaturanGuru()">⚙️ Pengaturan Guru — Google Sheets</button>
+
+      <div id="panelGuru" class="panel-guru" style="display:none;">
+        <h4>🔗 Sambungkan ke Google Sheets</h4>
+        <p>Tempelkan URL <b>Web App</b> Apps Script (diakhiri <code>/exec</code>). Tersimpan di perangkat ini saja.</p>
+        <label for="inputScriptUrl">URL Web App Apps Script</label>
+        <input type="url" id="inputScriptUrl" placeholder="https://script.google.com/macros/s/..../exec"
+               autocomplete="off" autocorrect="off" spellcheck="false">
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn btn-primary" type="button" onclick="simpanScriptUrl()">💾 Simpan</button>
+          <button class="btn btn-secondary" type="button" onclick="tesKoneksiGuru()">🧪 Tes Koneksi</button>
+          <button class="btn btn-secondary" type="button" onclick="hapusScriptUrl()">🗑️ Hapus</button>
+        </div>
+        <div class="hint" id="panelGuruPesan" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU SCREEN -->
+  <div class="card" id="screen-menu" style="display:none;">
+    <div class="welcome-back" id="welcomeBack" style="display:none;"></div>
+    <h2 class="section-title">Pilih Misi <span class="pill">8 Mode</span></h2>
+    <div class="menu-grid">
+      <div class="menu-item" onclick="bukaModeTGT(1)">
+        <span class="mode-badge badge-s1">Siklus 1</span>
+        <span class="emoji">🧠</span>
+        <h3>1. Kuis Wartawan Cilik</h3>
+        <p>Uji pemahamanmu: pengertian, sifat aktual & faktual, struktur, dan ciri kebahasaan teks berita.</p>
+        <div class="mode-nilai" id="modeNilai1"></div>
+      </div>
+      <div class="menu-item" onclick="bukaModeTGT(2)">
+        <span class="mode-badge badge-s1">Siklus 1</span>
+        <span class="emoji">🧩</span>
+        <h3>2. Susun Piramida Terbalik</h3>
+        <p>Urutkan bagian berita acak menjadi teks berita yang benar sesuai strukturnya.</p>
+        <div class="mode-nilai" id="modeNilai2"></div>
+      </div>
+      <div class="menu-item" onclick="bukaModeTGT(3)">
+        <span class="mode-badge badge-s1">Siklus 1</span>
+        <span class="emoji">🔍</span>
+        <h3>3. Detektif ADIKSIMBA</h3>
+        <p>Temukan unsur 5W+1H (Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana) dalam contoh berita.</p>
+        <div class="mode-nilai" id="modeNilai3"></div>
+      </div>
+      <div class="menu-item" onclick="bukaModeTGT(4)">
+        <span class="mode-badge badge-s1">Siklus 1</span>
+        <span class="emoji">🔗</span>
+        <h3>4. Cocokkan Istilah</h3>
+        <p>Jodohkan istilah teks berita (judul, ADIKSIMBA, konjungsi, dll) dengan definisinya yang tepat.</p>
+        <div class="mode-nilai" id="modeNilai4"></div>
+      </div>
+      <div class="menu-item" onclick="bukaModeTGT(5)">
+        <span class="mode-badge badge-s2">Siklus 2</span>
+        <span class="emoji">✏️</span>
+        <h3>5. Editor Berita</h3>
+        <p>Jadilah editor! Temukan kalimat yang salah/tidak efektif dalam contoh teks berita.</p>
+        <div class="mode-nilai" id="modeNilai5"></div>
+      </div>
+      <div class="menu-item" onclick="bukaModeTGT(6)">
+        <span class="mode-badge badge-s2">Siklus 2</span>
+        <span class="emoji">⏱️</span>
+        <h3>6. Tebak Cepat B/S</h3>
+        <p>Jawab Benar/Salah secepat mungkin sebelum waktu habis. Uji refleks & pemahamanmu!</p>
+        <div class="mode-nilai" id="modeNilai6"></div>
+      </div>
+      <div class="menu-item" onclick="bukaModeTGT(7)">
+        <span class="mode-badge badge-s2">Siklus 2</span>
+        <span class="emoji">✍️</span>
+        <h3>7. Tulis Berita</h3>
+        <p>Latihan keterampilan menulis: susun teks beritamu sendiri (judul, teras, tubuh, ekor) dari fakta yang diberikan.</p>
+        <div class="mode-nilai" id="modeNilai7"></div>
+      </div>
+      <div class="menu-item menu-item-ptk" onclick="bukaModeTGT(8)">
+        <span class="mode-badge badge-s2">Siklus 2</span>
+        <span class="emoji">🏆</span>
+        <h3>8. Turnamen TGT + Menulis</h3>
+        <p>Ice breaking ➜ turnamen kartu soal berpoin kelompok ➜ tantangan menulis teks berita bernilai rubrik. Mode puncak Siklus 2.</p>
+        <div class="mode-nilai" id="modeNilai8"></div>
+      </div>
+    </div>
+    <div class="menu-ptk-bar">
+      🏓 <b>Semua mode memakai model TGT:</b> Presentasi Kelas ➜ Belajar Tim ➜ Games ➜ Turnamen ➜ Rekognisi Tim.<br>
+      🔬 <b>Data PTK:</b> mode 1–4 = <b>Siklus 1</b>, mode 5–8 = <b>Siklus 2</b>. Nilai 0–100 (KKM 75) + poin turnamen untuk kelompok.
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn btn-primary" onclick="showRekapPTK()">📊 Lihat Rekap Data PTK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TGT INTRO SCREEN (Tahap 1: Presentasi Kelas & Tahap 2: Belajar Tim) -->
+  <div class="card" id="screen-tgt-intro" style="display:none;">
+    <div class="tgt-hero">
+      <span class="siklus-tag" id="tgtSiklusTag">Siklus 1</span>
+      <h3 id="tgtModeJudul">Mode</h3>
+      <div class="tim">🏓 Meja turnamen: <b id="tgtTimNama">Kelompok</b> • Peserta: <span id="tgtSiswaNama">-</span></div>
+    </div>
+
+    <nav class="tgt-steps" id="tgtSteps" aria-label="Tahapan Teams Games Tournament"></nav>
+
+    <section class="tgt-panel presentasi">
+      <h4><span aria-hidden="true">📣</span> Tahap 1 — Presentasi Kelas</h4>
+      <ul id="tgtPresentasi"></ul>
+    </section>
+
+    <section class="tgt-panel tim">
+      <h4><span aria-hidden="true">👥</span> Tahap 2 — Belajar Tim</h4>
+      <ul id="tgtStrategi"></ul>
+    </section>
+
+    <section class="tgt-panel">
+      <h4><span aria-hidden="true">🏅</span> Aturan Poin Turnamen</h4>
+      <div style="overflow-x:auto;">
+        <table class="tgt-poin-tabel">
+          <thead><tr><th>Nilai Games</th><th>90–100</th><th>75–89</th><th>60–74</th><th>40–59</th><th>&lt; 40</th></tr></thead>
+          <tbody><tr><th scope="row">Poin Turnamen</th><td><b>60</b></td><td><b>50</b></td><td><b>40</b></td><td><b>30</b></td><td><b>20</b></td></tr></tbody>
+        </table>
+      </div>
+      <p style="font-size:.8rem; color:var(--muted); margin:10px 0 0; line-height:1.6;">
+        Poin turnamenmu disumbangkan ke kelompok. Rata-rata poin satu siklus menentukan predikat tim:
+        <b>≥50 Tim Super</b>, <b>≥45 Tim Hebat</b>, <b>≥40 Tim Baik</b>.
+      </p>
+    </section>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="tgtMulaiBtn" onclick="tgtMulaiGames()">🎮 Mulai Tahap 3 — Games ➜</button>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="card" id="screen-quiz" style="display:none;">
+    <h2 class="section-title">🧠 Kuis Wartawan Cilik <span class="pill" id="quizProgressLabel">1/10</span></h2>
+    <div class="progress-bar"><div id="quizProgressBar" style="width:0%"></div></div>
+    <div class="quiz-topbar">
+      <div class="progress-dots" id="quizDots"></div>
+      <div class="streak-badge" id="quizStreakBadge">🔥 Streak: <span id="quizStreakNum">0</span></div>
+    </div>
+    <div class="mascot-bar" id="quizMascot"><span class="mascot-emoji">🦸</span><span id="quizMascotText">Ayo mulai, Wartawan Cilik! Pilih jawaban yang paling tepat.</span></div>
+    <div class="question-text" id="quizQuestion"></div>
+    <div id="quizOptions"></div>
+    <div class="feedback" id="quizFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="quizNextBtn" onclick="nextQuiz()" disabled>Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- DRAG DROP SCREEN -->
+  <div class="card" id="screen-drag" style="display:none;">
+    <h2 class="section-title">🧩 Susun Piramida Terbalik <span class="pill" id="dragRoundLabel">Ronde 1/2</span></h2>
+    <div class="timer-bar"><div id="dragTimerBar" style="width:100%"></div></div>
+    <p style="color:var(--muted); font-size:.88rem;" id="dragInstruction">Seret (drag) atau gunakan tombol ↑↓ untuk mengurutkan potongan berikut sesuai bentuk piramida di bawah: <b>Judul → Teras (Lead) → Tubuh Berita → Ekor Berita</b>. Awas, ada kalimat "jebakan" yang <b>BUKAN</b> bagian dari berita — pindahkan ke kotak "Bukan Bagian Berita"!</p>
+    <div class="pyramid-wrap">
+      <svg class="pyramid-svg" viewBox="0 0 240 160">
+        <polygon points="100,10 140,10 160,45 80,45" fill="#38bdf8"/>
+        <text x="120" y="32" class="pyramid-layer-label">JUDUL</text>
+        <polygon points="80,50 160,50 185,90 55,90" fill="#22d3ee"/>
+        <text x="120" y="74" class="pyramid-layer-label">TERAS</text>
+        <polygon points="55,95 185,95 205,130 35,130" fill="#f59e0b"/>
+        <text x="120" y="117" class="pyramid-layer-label">TUBUH</text>
+        <polygon points="35,135 205,135 220,155 20,155" fill="#fb923c"/>
+        <text x="120" y="150" class="pyramid-layer-label">EKOR</text>
+      </svg>
+    </div>
+    <h4 class="zone-heading">🧩 Susunan Beritamu</h4>
+    <ul class="dropzone-list" id="dragList"></ul>
+    <h4 class="zone-heading discard-heading">🗑️ Bukan Bagian Berita <span class="hint" style="margin:0;">(letakkan kalimat jebakan di sini)</span></h4>
+    <ul class="dropzone-list discard-list" id="discardList"></ul>
+    <div class="feedback" id="dragFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="dragCheckBtn" onclick="checkDrag()">✅ Periksa Urutan</button>
+      <button class="btn btn-primary" id="dragNextBtn" onclick="nextDragRound()" style="display:none;">Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- DETECTIVE SCREEN -->
+  <div class="card" id="screen-detective" style="display:none;">
+    <h2 class="section-title">🔍 Detektif ADIKSIMBA <span class="pill" id="detProgressLabel">1/3</span></h2>
+    <div class="detective-header"><span class="blink-dot"></span> BERKAS KASUS SEDANG DIBUKA...</div>
+    <div class="case-file">
+      <div class="news-sample" id="detText"></div>
+      <p style="color:var(--muted); font-size:.85rem; margin-bottom:0;">🕵️ Selidiki teks berita di atas, lalu isi kolom di bawah ini:</p>
+      <div class="adiksimba-grid" id="detGrid"></div>
+      <div id="detStampBox"></div>
+    </div>
+    <div class="feedback" id="detFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="detCheckBtn" onclick="checkDetective()">✅ Periksa Jawaban</button>
+      <button class="btn btn-primary" id="detNextBtn" onclick="nextDetective()" style="display:none;">Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- MATCHING SCREEN -->
+  <div class="card" id="screen-matching" style="display:none;">
+    <h2 class="section-title">🔗 Cocokkan Istilah <span class="pill" id="matchProgressLabel">0/8</span></h2>
+    <p style="color:var(--muted); font-size:.88rem;">Klik satu istilah di kiri, lalu klik definisi yang cocok di kanan.</p>
+    <div class="match-cols">
+      <div class="match-col">
+        <h4>Istilah</h4>
+        <div id="matchTerms"></div>
+      </div>
+      <div class="match-col">
+        <h4>Definisi</h4>
+        <div id="matchDefs"></div>
+      </div>
+    </div>
+    <div class="feedback" id="matchFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+    </div>
+  </div>
+
+  <!-- EDITOR BERITA SCREEN -->
+  <div class="card" id="screen-editor" style="display:none;">
+    <h2 class="section-title">✏️ Editor Berita <span class="pill" id="editorProgressLabel">1/3</span></h2>
+    <p style="color:var(--muted); font-size:.88rem;">Klik kalimat yang menurutmu SALAH atau tidak efektif, lalu klik "Periksa".</p>
+    <div class="editor-para" id="editorPara"></div>
+    <div class="correction-box" id="editorCorrection"></div>
+    <div class="feedback" id="editorFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="editorCheckBtn" onclick="checkEditor()">✅ Periksa</button>
+      <button class="btn btn-primary" id="editorNextBtn" onclick="nextEditor()" style="display:none;">Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- TIME ATTACK SCREEN -->
+  <div class="card" id="screen-timeattack" style="display:none;">
+    <h2 class="section-title">⏱️ Tebak Cepat Benar/Salah <span class="pill" id="taProgressLabel">1/8</span></h2>
+    <div class="ta-score-strip" id="taScoreStrip">Skor ronde ini: 0</div>
+    <div class="timer-bar"><div id="taTimerBar" style="width:100%"></div></div>
+    <div class="tf-question" id="taQuestion"></div>
+    <div class="tf-buttons">
+      <button class="tf-btn true-btn" id="taTrueBtn" onclick="answerTimeAttack(true)">✅ BENAR</button>
+      <button class="tf-btn false-btn" id="taFalseBtn" onclick="answerTimeAttack(false)">❌ SALAH</button>
+    </div>
+    <div class="feedback" id="taFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="taNextBtn" onclick="nextTimeAttack()" style="display:none;">Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- WRITING (TULIS BERITA) SCREEN -->
+  <div class="card" id="screen-writing" style="display:none;">
+    <h2 class="section-title">✍️ Tulis Berita <span class="pill" id="writeProgressLabel">1/3</span></h2>
+    <p style="color:var(--muted); font-size:.88rem;">Baca fakta-fakta berikut, lalu tulis teks beritamu sendiri sesuai struktur piramida terbalik (Judul → Teras → Tubuh → Ekor).</p>
+    <div class="fakta-box">
+      <h4>📋 Data & Fakta Peristiwa</h4>
+      <div class="fakta-grid" id="writeFaktaGrid"></div>
+    </div>
+
+    <div class="write-field">
+      <label for="writeJudul">Judul Berita <span class="wc" id="wcJudul">0 kata</span></label>
+      <textarea id="writeJudul" rows="1" placeholder="Tulis judul berita yang menarik dan singkat..." oninput="updateWordCount('writeJudul','wcJudul')"></textarea>
+    </div>
+    <div class="write-field">
+      <label for="writeTeras">Teras Berita (Lead) <span class="wc" id="wcTeras">0 kata</span></label>
+      <textarea id="writeTeras" rows="2" placeholder="Ringkas inti peristiwa memuat unsur 5W+1H..." oninput="updateWordCount('writeTeras','wcTeras')"></textarea>
+    </div>
+    <div class="write-field">
+      <label for="writeTubuh">Tubuh Berita <span class="wc" id="wcTubuh">0 kata</span></label>
+      <textarea id="writeTubuh" rows="3" placeholder="Jelaskan peristiwa secara lebih rinci..." oninput="updateWordCount('writeTubuh','wcTubuh')"></textarea>
+    </div>
+    <div class="write-field">
+      <label for="writeEkor">Ekor Berita <span class="wc" id="wcEkor">0 kata</span></label>
+      <textarea id="writeEkor" rows="2" placeholder="Informasi tambahan/pelengkap..." oninput="updateWordCount('writeEkor','wcEkor')"></textarea>
+    </div>
+
+    <div id="writeChecklistBox" style="display:none;">
+      <h4 style="font-size:.85rem; color:var(--muted); text-transform:uppercase; margin-bottom:8px;">Hasil Pemeriksaan Otomatis</h4>
+      <ul class="checklist" id="writeChecklist"></ul>
+      <div class="writing-note">📌 Pemeriksaan ini hanya mengecek kelengkapan struktur & fakta secara otomatis. Kualitas tulisan (diksi, keefektifan kalimat, koherensi) akan dinilai langsung oleh gurumu sesuai rubrik penilaian menulis teks berita.</div>
+    </div>
+
+    <div class="feedback" id="writeFeedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" id="writeCheckBtn" onclick="checkWriting()">✅ Periksa & Kirim ke Guru</button>
+      <button class="btn btn-primary" id="writeNextBtn" onclick="nextWriting()" style="display:none;">Lanjut ➜</button>
+    </div>
+  </div>
+
+  <!-- PTK HUB SCREEN (SIKLUS 1 & 2) -->
+  <div class="card" id="screen-ptk" style="display:none;">
+    <div class="ptk-header">
+      <div class="ptk-tag">🔬 Rekap Data Penelitian Tindakan Kelas</div>
+      <h3 class="ptk-judul">PENERAPAN MODEL PEMBELAJARAN KOOPERATIF TIPE TEAMS GAMES TOURNAMENT (TGT) BERBANTUAN ICE BREAKING BERBASIS MEDIA PERMAINAN SIGAP BERITA UNTUK MENINGKATKAN KETERAMPILAN MENULIS TEKS BERITA PESERTA DIDIK KELAS XI-10 SMA NEGERI 2 SEMARANG</h3>
+      <div class="ptk-sub">SMA Negeri 2 Semarang • Bahasa Indonesia • Kelas XI-10</div>
+    </div>
+
+    <p style="color:var(--muted); font-size:.85rem; line-height:1.6; margin:0 0 14px;">
+      Data penelitian diambil dari nilai <b>8 mode permainan</b>:
+      <b>Siklus 1</b> = mode 1–4 (mengenali &amp; menyusun berita) dan
+      <b>Siklus 2</b> = mode 5–8 (menyunting, menulis, dan turnamen TGT).
+      Setiap mode menghasilkan nilai 0–100 dengan KKM <b>75</b> dan dijalankan dengan sintaks
+      <b>TGT</b>: Presentasi Kelas ➜ Belajar Tim ➜ Games ➜ Turnamen ➜ Rekognisi Tim.
+    </p>
+
+    <div id="ptkRekapBox" style="display:none;"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goMenu()">⬅ Menu</button>
+      <button class="btn btn-primary" onclick="downloadRekapPTK()">📥 Unduh Rekap PTK (CSV)</button>
+      <button class="btn btn-secondary" onclick="resetPTK()">🔄 Reset Nilai 8 Mode</button>
+    </div>
+  </div>
+
+  <!-- PTK PLAY SCREEN -->
+  <div class="card" id="screen-ptk-play" style="display:none;">
+    <h2 class="section-title"><span id="ptkPlayTitle">Siklus 1</span> <span class="pill" id="ptkStepLabel">Babak 1/3</span></h2>
+    <div class="progress-bar"><div id="ptkProgressBar" style="width:0%"></div></div>
+
+    <!-- Tahap 1: Ice Breaking -->
+    <div id="ptkIce" style="display:none;">
+      <div class="ice-box">
+        <div class="ice-emoji" id="ptkIceEmoji">🎉</div>
+        <h3 id="ptkIceJudul">Ice Breaking</h3>
+        <p id="ptkIceInstruksi"></p>
+        <ol class="ice-steps" id="ptkIceSteps"></ol>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goMenu()">⬅ Kembali</button>
+        <button class="btn btn-primary" onclick="ptkGoTurnamen()">Siap! Mulai Turnamen ➜</button>
+      </div>
+    </div>
+
+    <!-- Tahap 2: Turnamen TGT -->
+    <div id="ptkGame" style="display:none;">
+      <div class="tgt-topbar">
+        <div class="tgt-meja">🏓 Meja Turnamen • <b id="ptkKelompokLabel">-</b></div>
+        <div class="tgt-poin">🏅 Poin Turnamen: <b id="ptkPoin">0</b></div>
+      </div>
+      <div class="progress-dots" id="ptkDots" style="margin-bottom:10px;"></div>
+      <div class="mascot-bar"><span class="mascot-emoji">🎙️</span><span id="ptkMascotText">Jawab dengan cepat dan tepat, poinnya untuk kelompokmu!</span></div>
+      <div class="question-text" id="ptkQuestion"></div>
+      <div id="ptkOptions"></div>
+      <div class="feedback" id="ptkFeedback"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goMenu()">⬅ Keluar</button>
+        <button class="btn btn-primary" id="ptkNextBtn" onclick="ptkNextSoal()" disabled>Lanjut ➜</button>
+      </div>
+    </div>
+
+    <!-- Tahap 3: Tugas Menulis -->
+    <div id="ptkWrite" style="display:none;">
+      <div class="fakta-box">
+        <h4 id="ptkWriteTema">Data Peristiwa</h4>
+        <div class="fakta-grid" id="ptkFaktaGrid"></div>
+      </div>
+      <div class="write-field">
+        <label for="ptkJudul">Judul Berita <span class="wc" id="wcPtkJudul">0 kata</span></label>
+        <textarea id="ptkJudul" rows="1" placeholder="Tulis judul berita yang singkat, jelas, dan menarik..." oninput="updateWordCount('ptkJudul','wcPtkJudul')"></textarea>
+      </div>
+      <div class="write-field">
+        <label for="ptkTeras">Teras Berita (Lead) <span class="wc" id="wcPtkTeras">0 kata</span></label>
+        <textarea id="ptkTeras" rows="2" placeholder="Ringkas inti peristiwa memuat unsur ADIKSIMBA..." oninput="updateWordCount('ptkTeras','wcPtkTeras')"></textarea>
+      </div>
+      <div class="write-field">
+        <label for="ptkTubuh">Tubuh Berita <span class="wc" id="wcPtkTubuh">0 kata</span></label>
+        <textarea id="ptkTubuh" rows="3" placeholder="Uraikan peristiwa secara lebih rinci..." oninput="updateWordCount('ptkTubuh','wcPtkTubuh')"></textarea>
+      </div>
+      <div class="write-field">
+        <label for="ptkEkor">Ekor Berita <span class="wc" id="wcPtkEkor">0 kata</span></label>
+        <textarea id="ptkEkor" rows="2" placeholder="Informasi tambahan/pelengkap..." oninput="updateWordCount('ptkEkor','wcPtkEkor')"></textarea>
+      </div>
+      <div id="ptkChecklistBox" style="display:none;">
+        <h4 style="font-size:.85rem; color:var(--muted); text-transform:uppercase; margin-bottom:8px;">Hasil Pemeriksaan Otomatis</h4>
+        <ul class="checklist" id="ptkChecklist"></ul>
+        <div class="writing-note">📌 Skor otomatis ini mengukur kelengkapan struktur &amp; kelengkapan unsur ADIKSIMBA. Aspek diksi, keefektifan kalimat, dan ejaan tetap dinilai guru sesuai rubrik PTK.</div>
+      </div>
+      <div class="feedback" id="ptkWriteFeedback"></div>
+      <div id="ptkTGTBox"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goMenu()">⬅ Keluar</button>
+        <button class="btn btn-primary" id="ptkWriteCheckBtn" onclick="ptkCheckWriting()">✅ Kumpulkan &amp; Selesaikan Turnamen</button>
+        <button class="btn btn-primary" id="ptkWriteDoneBtn" onclick="showRekapPTK()" style="display:none;">Lihat Rekap Data PTK ➜</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="card" id="screen-result" style="display:none;">
+    <div class="result-box">
+      <div class="big-emoji" id="resultEmoji">🎉</div>
+      <h2 id="resultTitle">Misi Selesai!</h2>
+      <div class="score-num" id="resultScore">+0</div>
+      <p id="resultDesc"></p>
+      <div id="resultTGT"></div>
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn btn-secondary" onclick="goMenu()">⬅ Kembali ke Menu</button>
+        <button class="btn btn-primary" id="resultRetry" onclick="retryLast()">🔄 Ulangi Misi</button>
+        <button class="btn btn-primary" onclick="downloadResults()">📥 Unduh Hasil (CSV)</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bottom">SIGAP BERITA • Materi: Teks Berita — sifat aktual & faktual, struktur piramida terbalik, unsur 5W+1H, ciri kebahasaan • Kelas XI SMA Negeri 2 Semarang</footer>
+</div>
+
+<script>
+/* ===================== KONEKSI KE GURU (GOOGLE SHEETS) ===================== */
+// GURU: ganti nilai di bawah ini dengan URL Web App Google Apps Script kamu
+// (lihat panduan setup yang disertakan) agar jawaban siswa otomatis tersimpan
+// ke Google Sheets milikmu secara real-time. Jika dibiarkan seperti ini,
+// game tetap berjalan normal, hanya saja pengiriman otomatis dinonaktifkan
+// dan siswa harus mengunduh & mengirim file CSV secara manual.
+// URL Web App lama (sebelum struktur 3 sheet) — disimpan bila sewaktu-waktu diperlukan:
+// https://script.google.com/macros/s/AKfycbzoKz4jSBPeexzzu_gJCLQvkOETl8dWF7k8jCN7UHRPKjvVHEuo3M1NpWDV-kzkvumo/exec
+const GOOGLE_SCRIPT_URL_DEFAULT = "https://script.google.com/macros/s/AKfycby5FHz4tlvOruRjR1TPuTCvBkjaKWdbpQuKbqHFe4ZCztxGQ1uX7vvMZ6AUn2zr3hRXnQ/exec";
+
+/* URL dapat diganti tanpa mengedit file: tombol "Atur Google Sheets" di layar awal
+   menyimpannya di perangkat guru (localStorage). Nilai di atas dipakai bila belum diatur. */
+function getScriptUrl(){
+  try{
+    const simpan = LS && LS.getItem('sigapScriptUrl');
+    if(simpan) return simpan;
+  }catch(e){}
+  return GOOGLE_SCRIPT_URL_DEFAULT;
+}
+
+function isTeacherConnected(){
+  const u = getScriptUrl();
+  return !!u && u.indexOf('http') === 0 && u.indexOf('/exec') !== -1;
+}
+
+function kirimKeAppsScript(payload){
+  if(!isTeacherConnected()) return;
+  fetch(getScriptUrl(), {
+    method: 'POST',
+    mode: 'no-cors', // Apps Script tidak mengirim header CORS; kita tak perlu baca respons
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // hindari CORS preflight
+    body: JSON.stringify(payload)
+  }).catch(()=>{ /* jika gagal (mis. offline), data tetap aman di CSV lokal */ });
+}
+
+function sendToTeacher(record){
+  const payload = Object.assign({
+    tipe: 'jawaban',
+    nama: state.student.nama,
+    kelas: state.student.kelompok || '-', // kolom lama "Kelas" di sheet guru kini berisi KELOMPOK
+    kelompok: state.student.kelompok || '-',
+    skorTotal: state.score
+  }, record);
+  kirimKeAppsScript(payload);
+}
+
+/* Kirim rekap nilai lengkap (1 baris per siswa) setiap kali sebuah mode selesai */
+function kirimRekapKeGuru(){
+  if(!isTeacherConnected()) return;
+  const s1 = statSiklus(1), s2 = statSiklus(2);
+  const p1 = statPoinTim(1), p2 = statPoinTim(2);
+  const nilai = {}, poin = {};
+  MODE_META.forEach(m=>{
+    const d = state.nilai[m.no];
+    nilai['m' + m.no] = d ? d.nilai : '';
+    poin['m' + m.no]  = d ? d.poinTurnamen : '';
+  });
+  let selisih = '', persen = '', nGain = '', kategori = '';
+  if(s1.rata !== null && s2.rata !== null){
+    selisih = Math.round((s2.rata - s1.rata) * 10) / 10;
+    persen  = s1.rata > 0 ? Math.round((s2.rata - s1.rata) / s1.rata * 1000) / 10 : 0;
+    const g = s1.rata >= 100 ? 1 : (s2.rata - s1.rata) / (100 - s1.rata);
+    nGain = Math.round(g * 100) / 100;
+    kategori = nGain >= 0.7 ? 'Tinggi' : (nGain >= 0.3 ? 'Sedang' : 'Rendah');
+  }
+  kirimKeAppsScript({
+    tipe: 'rekap',
+    nama: state.student.nama,
+    kelompok: state.student.kelompok || '-',
+    skorTotal: state.score,
+    waktu: new Date().toLocaleString('id-ID'),
+    judulPTK: PTK_JUDUL,
+    kkm: PTK_KKM,
+    nilai: nilai,
+    poin: poin,
+    s1Selesai: s1.selesai, s1Rata: s1.rata === null ? '' : s1.rata, s1Tuntas: s1.tuntas,
+    s1PersenTuntas: s1.persenTuntas === null ? '' : s1.persenTuntas,
+    s1PoinTotal: p1.total, s1PoinRata: p1.rata === null ? '' : p1.rata,
+    s1Predikat: p1.rata === null ? '' : predikatTim(p1.rata).nama,
+    s2Selesai: s2.selesai, s2Rata: s2.rata === null ? '' : s2.rata, s2Tuntas: s2.tuntas,
+    s2PersenTuntas: s2.persenTuntas === null ? '' : s2.persenTuntas,
+    s2PoinTotal: p2.total, s2PoinRata: p2.rata === null ? '' : p2.rata,
+    s2Predikat: p2.rata === null ? '' : predikatTim(p2.rata).nama,
+    selisih: selisih, persenPeningkatan: persen, nGain: nGain, kategoriGain: kategori
+  });
+}
+
+/* ---------- PENGATURAN GURU: URL GOOGLE SHEETS ---------- */
+function bukaPengaturanGuru(){
+  const el = document.getElementById('panelGuru');
+  const buka = el.style.display === 'none';
+  el.style.display = buka ? 'block' : 'none';
+  if(buka){
+    const u = getScriptUrl();
+    document.getElementById('inputScriptUrl').value = (u && u.indexOf('http') === 0) ? u : '';
+    document.getElementById('panelGuruPesan').innerHTML = '';
+  }
+}
+
+function simpanScriptUrl(){
+  const v = document.getElementById('inputScriptUrl').value.trim();
+  const pesan = document.getElementById('panelGuruPesan');
+  if(v && !(v.indexOf('https://script.google.com/') === 0 && v.indexOf('/exec') !== -1)){
+    pesan.innerHTML = '⚠️ URL belum tepat. Harus dimulai <b>https://script.google.com/</b> dan diakhiri <b>/exec</b>.';
+    return;
+  }
+  try{ if(LS){ if(v) LS.setItem('sigapScriptUrl', v); else LS.removeItem('sigapScriptUrl'); } }catch(e){}
+  updateConnStatus();
+  pesan.innerHTML = v ? '✅ URL tersimpan. Jawaban siswa akan dikirim otomatis ke Google Sheets.'
+                      : 'ℹ️ URL dikosongkan — aplikasi kembali ke mode offline (CSV).';
+}
+
+function hapusScriptUrl(){
+  document.getElementById('inputScriptUrl').value = '';
+  simpanScriptUrl();
+}
+
+function tesKoneksiGuru(){
+  const pesan = document.getElementById('panelGuruPesan');
+  const v = document.getElementById('inputScriptUrl').value.trim() || getScriptUrl();
+  if(!v || v.indexOf('http') !== 0){
+    pesan.innerHTML = '⚠️ Isi dulu URL Web App-nya, ya.';
+    return;
+  }
+  kirimKeAppsScript({
+    tipe: 'jawaban', nama: 'TES KONEKSI', kelas: '-', kelompok: '-', skorTotal: 0,
+    mode: 'Tes Koneksi', bagian: '-', item: 'Uji sambungan dari aplikasi',
+    jawabanSiswa: '-', kunci: '-', status: 'OK', waktu: new Date().toLocaleString('id-ID')
+  });
+  window.open(v + (v.indexOf('?') === -1 ? '?' : '&') + 'ping=1', '_blank', 'noopener');
+  pesan.innerHTML = 'Tab baru dibuka. Jika muncul tulisan <b>"SIGAP BERITA tersambung"</b>, koneksi berhasil. ' +
+    'Cek juga baris <b>TES KONEKSI</b> di sheet <b>Jawaban</b>.';
+}
+
+function updateConnStatus(){
+  const el = document.getElementById('connStatus');
+  if(!el) return;
+  if(isTeacherConnected()){
+    el.innerHTML = '🟢 Tersambung otomatis ke guru — jawabanmu akan langsung tersimpan.';
+  } else {
+    el.innerHTML = '🟡 Mode offline — hasil belum tersambung otomatis ke guru, jangan lupa klik <b>"Unduh Hasil (CSV)"</b> lalu kirim ke gurumu.<br><span style="font-size:.78rem;">Guru: atur sambungan lewat tombol di bawah.</span>';
+  }
+}
+
+/* ===================== STATE ===================== */
+let state = {
+  score: 0,
+  quizCorrect: 0,
+  lastMode: null,
+  student: { nama:'', kelompok:'', mulai:null },
+  nilai: null, // nilai 0-100 tiap mode (data PTK: mode 1-4 Siklus 1, mode 5-8 Siklus 2)
+  log: []  // detailed record of every answer given, for export
+};
+
+/* ===================== PENYIMPANAN PROGRES SISWA =====================
+   Progres disimpan di perangkat (localStorage) dengan kunci NAMA siswa.
+   Login memakai nama yang sama -> skor & catatan jawaban dilanjutkan,
+   tidak diulang dari nol. Tombol "Reset" menghapusnya bila ingin mengulang. */
+const STORAGE_KEY = 'sigapBeritaProgress_v1';
+let memoryStore = {}; // cadangan bila localStorage diblokir browser
+
+function getStore(){
+  try{
+    if(typeof localStorage === 'undefined' || !localStorage) return null;
+    localStorage.setItem('__sigap_test__','1');
+    localStorage.removeItem('__sigap_test__');
+    return localStorage;
+  }catch(e){ return null; }
+}
+const LS = getStore();
+
+function normalizeName(n){
+  return String(n == null ? '' : n)
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\u2060\uFEFF]/g,'')
+    .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g,' ')
+    .replace(/\s+/g,' ')
+    .trim()
+    .toUpperCase();
+}
+
+function loadAllProgress(){
+  if(!LS) return memoryStore;
+  try{ return JSON.parse(LS.getItem(STORAGE_KEY) || '{}') || {}; }catch(e){ return {}; }
+}
+function saveAllProgress(obj){
+  if(!LS){ memoryStore = obj; return; }
+  try{ LS.setItem(STORAGE_KEY, JSON.stringify(obj)); }catch(e){ memoryStore = obj; }
+}
+function saveProgress(){
+  if(!state.student.nama) return;
+  const all = loadAllProgress();
+  all[state.student.nama] = {
+    nama: state.student.nama,
+    kelompok: state.student.kelompok,
+    score: state.score,
+    quizCorrect: state.quizCorrect,
+    lastMode: state.lastMode,
+    nilai: state.nilai,
+    mulai: state.student.mulai,
+    terakhir: new Date().toISOString(),
+    log: state.log.slice(-600) // batasi agar tidak melebihi kuota penyimpanan
+  };
+  saveAllProgress(all);
+}
+function getProgress(nama){
+  const all = loadAllProgress();
+  return all[normalizeName(nama)] || null;
+}
+function hapusProgress(nama){
+  const all = loadAllProgress();
+  delete all[normalizeName(nama)];
+  saveAllProgress(all);
+}
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function saveHud(){
+  document.getElementById('hudScore').textContent = state.score;
+  let level = 'Pemula';
+  if(state.score >= 250) level = 'Redaktur';
+  else if(state.score >= 150) level = 'Wartawan Senior';
+  else if(state.score >= 60) level = 'Wartawan Muda';
+  document.getElementById('hudLevel').textContent = level;
+  let stars = Math.min(3, Math.floor(state.score/100));
+  document.getElementById('hudStars').textContent = stars;
+  let badge = 'Belum ada lencana';
+  if(stars>=3) badge = '🏆 Pewarta Utama';
+  else if(stars>=2) badge = '🥈 Pewarta Andal';
+  else if(stars>=1) badge = '🥉 Pewarta Pemula';
+  document.getElementById('hudBadge').textContent = badge;
+  document.getElementById('hudNama').textContent = state.student.nama || '-';
+  document.getElementById('hudKelompok').textContent = state.student.kelompok || '-';
+  const elPoin = document.getElementById('hudPoinTim');
+  if(elPoin && typeof statPoinTim === 'function' && state.nilai) elPoin.textContent = statPoinTim().total;
+  saveProgress();
+}
+
+function hideAll(){
+  // hentikan timer yang masih berjalan agar tidak mencatat jawaban setelah siswa keluar mode
+  if(typeof dragTimer !== 'undefined' && dragTimer) clearInterval(dragTimer);
+  if(typeof taTimer !== 'undefined' && taTimer) clearInterval(taTimer);
+  ['start','menu','tgt-intro','quiz','drag','detective','matching','editor','timeattack','writing','ptk','ptk-play','result'].forEach(s=>{
+    document.getElementById('screen-'+s).style.display='none';
+  });
+}
+function goMenu(){ hideAll(); document.getElementById('screen-menu').style.display='block'; renderMenuNilai(); }
+
+/* Tampilkan nilai tiap mode di kartu menu */
+function renderMenuNilai(){
+  if(typeof MODE_META === 'undefined' || !state.nilai) return;
+  MODE_META.forEach(m=>{
+    const el = document.getElementById('modeNilai' + m.no);
+    if(!el) return;
+    const d = state.nilai[m.no];
+    if(!d){ el.style.display='none'; el.textContent=''; el.className='mode-nilai'; return; }
+    const tuntas = d.nilai >= PTK_KKM;
+    el.className = 'mode-nilai ' + (tuntas ? 'tuntas' : 'belum');
+    el.textContent = (tuntas ? '✅ ' : '⚠️ ') + 'Nilai ' + d.nilai + (tuntas ? ' — Tuntas' : ' — Belum tuntas');
+    el.style.display = 'block';
+  });
+}
+
+/* ===================== FUN EXTRAS: CONFETTI & MASCOT ===================== */
+const CONFETTI_COLORS = ['#38bdf8','#f59e0b','#22c55e','#fb923c','#a78bfa','#f472b6'];
+
+function fireConfetti(count){
+  count = count || 40;
+  for(let i=0;i<count;i++){
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const color = CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+    piece.style.left = (Math.random()*100) + 'vw';
+    piece.style.background = color;
+    piece.style.borderRadius = Math.random() > .5 ? '50%' : '2px';
+    const duration = 1.4 + Math.random()*1.2;
+    const delay = Math.random()*0.3;
+    piece.style.animationDuration = duration + 's';
+    piece.style.animationDelay = delay + 's';
+    document.body.appendChild(piece);
+    setTimeout(()=>piece.remove(), (duration+delay)*1000 + 200);
+  }
+}
+
+const MASCOT_MESSAGES = {
+  start: 'Ayo mulai, Wartawan Cilik! Pilih jawaban yang paling tepat.',
+  correctStreak: [
+    'Mantap! Terus pertahankan! 🔥',
+    'Kamu jagonya berita! 🎯',
+    'Luar biasa, jangan berhenti! 🚀',
+    'Wah, insting wartawanmu tajam! 🕶️'
+  ],
+  wrong: [
+    'Belum tepat, tapi jangan menyerah! 💪',
+    'Santai, coba lagi di soal berikutnya! 🙂',
+    'Yuk baca lagi penjelasannya biar makin paham! 📖'
+  ]
+};
+
+function randomFrom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+/* ---------- LOGIN: NAMA SAJA, OTOMATIS HURUF KAPITAL ---------- */
+function onNamaInput(){
+  const el = document.getElementById('inputNama');
+  const pos = el.selectionStart;
+  const up = el.value.toUpperCase();
+  if(el.value !== up){
+    el.value = up;
+    try{ el.setSelectionRange(pos, pos); }catch(e){}
+  }
+  refreshSavedInfo();
+}
+
+function refreshSavedInfo(){
+  const box = document.getElementById('savedInfo');
+  if(!box) return;
+  const nama = normalizeName(document.getElementById('inputNama').value);
+  const s = nama ? getProgress(nama) : null;
+  if(!s){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  const jml = (s.log || []).length;
+  const terakhir = s.terakhir ? new Date(s.terakhir).toLocaleString('id-ID') : '-';
+  const elKel = document.getElementById('inputKelompok');
+  if(elKel && !elKel.value.trim() && s.kelompok) elKel.value = s.kelompok; // isi otomatis kelompok tersimpan
+  box.style.display = 'block';
+  box.innerHTML =
+    '👋 Data <b>' + escapeHtml(s.nama) + '</b>' + (s.kelompok ? ' (' + escapeHtml(s.kelompok) + ')' : '') + ' ditemukan di perangkat ini.<br>' +
+    'Skor tersimpan: <b>' + (s.score || 0) + '</b> • Jawaban tercatat: <b>' + jml + '</b> • Terakhir main: ' + escapeHtml(terakhir) + '<br>' +
+    'Klik <b>Mulai Bermain</b> untuk <b>melanjutkan</b> (nilai tidak diulang dari nol).' +
+    '<div><button class="btn btn-secondary" type="button" onclick="resetFromLogin()">🔄 Reset & Mulai dari Awal</button></div>';
+}
+
+function resetFromLogin(){
+  const nama = normalizeName(document.getElementById('inputNama').value);
+  if(!nama) return;
+  if(!confirm('Hapus semua progres "' + nama + '" di perangkat ini dan mulai dari nol?\n\nSkor dan catatan jawaban yang tersimpan akan hilang.')) return;
+  hapusProgress(nama);
+  refreshSavedInfo();
+  alert('Progres "' + nama + '" sudah dihapus. Silakan klik Mulai Bermain untuk memulai dari awal.');
+}
+
+function submitStart(){
+  const nama = normalizeName(document.getElementById('inputNama').value);
+  const kelompok = document.getElementById('inputKelompok').value.replace(/\s+/g,' ').trim();
+  const err = document.getElementById('startError');
+  if(nama.length < 2){
+    err.textContent = 'Nama wajib diisi (minimal 2 huruf) ya!';
+    err.style.display = 'block';
+    return;
+  }
+  if(!kelompok){
+    err.textContent = 'Kelompok wajib diisi ya!';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  document.getElementById('inputNama').value = nama;
+
+  const saved = getProgress(nama);
+  state.student.nama = nama;
+  state.student.kelompok = kelompok;
+  if(saved){
+    // NAMA SAMA -> lanjutkan progres, jangan ulang nilai dari nol
+    state.score = saved.score || 0;
+    state.quizCorrect = saved.quizCorrect || 0;
+    state.lastMode = saved.lastMode || null;
+    state.nilai = saved.nilai && typeof saved.nilai === 'object' ? saved.nilai : defaultNilai();
+    state.log = Array.isArray(saved.log) ? saved.log : [];
+    state.student.mulai = saved.mulai || new Date().toISOString();
+  } else {
+    state.score = 0;
+    state.quizCorrect = 0;
+    state.lastMode = null;
+    state.nilai = defaultNilai();
+    state.log = [];
+    state.student.mulai = new Date().toISOString();
+  }
+
+  document.getElementById('hudBar').style.display = 'flex';
+  document.getElementById('downloadBar').style.display = 'flex';
+  document.getElementById('downloadBarLabel').textContent = isTeacherConnected()
+    ? '🟢 Jawabanmu otomatis tersimpan ke guru. Tombol di bawah hanya cadangan.'
+    : '🟡 Belum tersambung otomatis — unduh & kirim CSV ke guru setelah selesai.';
+  saveHud();
+  sendToTeacher({
+    mode: saved ? 'Sesi Dilanjutkan' : 'Sesi Dimulai',
+    bagian: '-',
+    item: saved ? 'Siswa melanjutkan progres tersimpan' : 'Siswa mulai bermain',
+    jawabanSiswa: '-',
+    kunci: '-',
+    status: saved ? 'Lanjut' : 'Mulai'
+  });
+
+  const wb = document.getElementById('welcomeBack');
+  if(saved){
+    wb.style.display = 'block';
+    wb.innerHTML = '✅ Selamat datang kembali, <b>' + escapeHtml(nama) + '</b>! Progres lamamu dilanjutkan — skor <b>' +
+      state.score + '</b> dengan <b>' + state.log.length + '</b> jawaban tercatat. Gunakan tombol <b>🔄 Reset Semua Progres</b> di atas bila ingin mengulang dari nol.';
+  } else {
+    wb.style.display = 'none';
+    wb.innerHTML = '';
+  }
+  goMenu();
+}
+
+/* ---------- RESET / GANTI SISWA SAAT SEDANG BERMAIN ---------- */
+function resetCurrentStudent(){
+  if(!state.student.nama) return;
+  if(!confirm('Reset SEMUA progres "' + state.student.nama + '"?\n\nSkor kembali 0 dan seluruh catatan jawaban dihapus. Tindakan ini tidak bisa dibatalkan.')) return;
+  hapusProgress(state.student.nama);
+  state.score = 0;
+  state.quizCorrect = 0;
+  state.lastMode = null;
+  state.nilai = defaultNilai();
+  state.log = [];
+  state.student.mulai = new Date().toISOString();
+  saveHud();
+  const wb = document.getElementById('welcomeBack');
+  wb.style.display = 'block';
+  wb.innerHTML = '🔄 Progres <b>' + escapeHtml(state.student.nama) + '</b> sudah direset. Skor kembali 0 — silakan pilih misi dari awal.';
+  goMenu();
+}
+
+function gantiSiswa(){
+  saveProgress();
+  state.student.nama = '';
+  state.student.kelompok = '';
+  state.score = 0;
+  state.quizCorrect = 0;
+  state.lastMode = null;
+  state.nilai = defaultNilai();
+  state.log = [];
+  document.getElementById('hudBar').style.display = 'none';
+  document.getElementById('downloadBar').style.display = 'none';
+  document.getElementById('welcomeBack').style.display = 'none';
+  document.getElementById('inputNama').value = '';
+  document.getElementById('inputKelompok').value = '';
+  refreshSavedInfo();
+  hideAll();
+  document.getElementById('screen-start').style.display = 'block';
+}
+
+/* ===================== LOGGING & CSV EXPORT ===================== */
+function logAnswer(record){
+  record.waktu = new Date().toLocaleString('id-ID');
+  if(!record.siklus && typeof tgtModeAktif !== 'undefined' && tgtModeAktif){
+    const meta = MODE_META.find(m => m.no === tgtModeAktif);
+    if(meta){ record.modeNo = meta.no; record.siklus = 'Siklus ' + meta.siklus; }
+  }
+  state.log.push(record);
+  sendToTeacher(record);
+  saveProgress(); // simpan otomatis setiap kali menjawab
+}
+
+function csvEscape(val){
+  if(val === undefined || val === null) val = '';
+  val = String(val).replace(/"/g,'""');
+  return '"' + val + '"';
+}
+
+function downloadResults(){
+  if(!state.student.nama){
+    alert('Isi dulu Nama dan Kelompok sebelum mengunduh hasil ya!');
+    return;
+  }
+  const rows = [];
+  rows.push(['Nama','Kelompok','Siklus','Mode','No/Bagian','Pertanyaan/Item','Jawaban Siswa','Jawaban Benar/Kunci','Status','Waktu']);
+  rows.push(['JUDUL PTK', PTK_JUDUL]);
+  rows.push([]);
+  if(state.log.length === 0){
+    rows.push([state.student.nama, state.student.kelompok, '-', '-', '-', 'Belum ada jawaban yang dikerjakan', '-', '-', '-', new Date().toLocaleString('id-ID')]);
+  } else {
+    state.log.forEach(r=>{
+      rows.push([state.student.nama, state.student.kelompok, r.siklus || '-', r.mode, r.bagian, r.item, r.jawabanSiswa, r.kunci, r.status, r.waktu]);
+    });
+  }
+  // summary row
+  rows.push([]);
+  rows.push(['RINGKASAN']);
+  rows.push(['Nama', state.student.nama]);
+  rows.push(['Kelompok', state.student.kelompok]);
+  rows.push(['Jumlah Jawaban Tercatat', state.log.length]);
+  MODE_META.forEach(m=>{
+    const d = state.nilai[m.no];
+    rows.push(['Nilai Mode ' + m.no + ' (Siklus ' + m.siklus + ') — ' + m.nama, d ? d.nilai : 'belum dikerjakan', d ? 'Poin TGT ' + d.poinTurnamen : '']);
+  });
+  const _s1 = statSiklus(1), _s2 = statSiklus(2);
+  rows.push(['Rata-rata Siklus 1 (mode 1-4)', _s1.rata === null ? '-' : _s1.rata]);
+  rows.push(['Rata-rata Siklus 2 (mode 5-8)', _s2.rata === null ? '-' : _s2.rata]);
+  const _p1 = statPoinTim(1), _p2 = statPoinTim(2);
+  rows.push(['Rekognisi Tim Siklus 1', _p1.rata === null ? '-' : predikatTim(_p1.rata).nama + ' (rata-rata poin ' + _p1.rata + ')']);
+  rows.push(['Rekognisi Tim Siklus 2', _p2.rata === null ? '-' : predikatTim(_p2.rata).nama + ' (rata-rata poin ' + _p2.rata + ')']);
+  rows.push(['Skor Total', state.score]);
+  rows.push(['Level', document.getElementById('hudLevel').textContent]);
+  rows.push(['Bintang', document.getElementById('hudStars').textContent + '/3']);
+  rows.push(['Waktu Unduh', new Date().toLocaleString('id-ID')]);
+
+  const csvContent = rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csvContent], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeNama = state.student.nama.replace(/[^a-z0-9]+/gi,'_');
+  const safeKelompok = (state.student.kelompok || '').replace(/[^a-z0-9]+/gi,'_');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `Hasil_SIGAPBERITA_${safeNama}_${safeKelompok}_${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ===================== QUIZ DATA ===================== */
+const quizBank = [
+  {
+    q: "Apa pengertian teks berita yang paling tepat?",
+    opts: [
+      "Teks yang berisi opini pribadi penulis tentang suatu peristiwa",
+      "Teks yang menyampaikan informasi mengenai suatu peristiwa/kejadian secara aktual dan faktual",
+      "Teks yang menceritakan kisah fiksi secara kronologis",
+      "Teks yang berisi langkah-langkah membuat sesuatu"
+    ], correct:1,
+    explain:"Teks berita adalah teks yang menyampaikan informasi tentang peristiwa yang terjadi secara aktual (baru/hangat) dan faktual (berdasarkan fakta, bukan rekaan)."
+  },
+  {
+    q: "Sebuah berita dikatakan bersifat 'aktual' apabila...",
+    opts: [
+      "Peristiwanya sudah lama terjadi namun tetap menarik",
+      "Informasinya baru saja terjadi/masih hangat dibicarakan",
+      "Ditulis menggunakan bahasa baku",
+      "Disertai gambar atau foto"
+    ], correct:1,
+    explain:"Aktual berarti informasi yang disampaikan bersifat baru, masih hangat, dan sedang menjadi perhatian masyarakat."
+  },
+  {
+    q: "Sebuah berita dikatakan bersifat 'faktual' apabila...",
+    opts: [
+      "Berdasarkan kejadian nyata/fakta, bukan karangan atau opini",
+      "Ditulis oleh wartawan terkenal",
+      "Peristiwanya terjadi di luar negeri",
+      "Menggunakan kalimat yang panjang"
+    ], correct:0,
+    explain:"Faktual berarti berita disusun berdasarkan kejadian nyata dan dapat dibuktikan kebenarannya, bukan hasil rekaan atau opini semata."
+  },
+  {
+    q: "Struktur teks berita secara umum disusun menggunakan pola...",
+    opts: [
+      "Piramida terbalik", "Kronologis maju", "Sebab-akibat", "Deskriptif spasial"
+    ], correct:0,
+    explain:"Teks berita disusun dengan pola piramida terbalik: informasi terpenting diletakkan di awal (teras berita), lalu semakin ke bawah semakin kurang penting."
+  },
+  {
+    q: "Bagian berita yang berisi ringkasan inti peristiwa (mengandung unsur 5W+1H) disebut...",
+    opts: [
+      "Judul berita", "Teras berita (lead)", "Tubuh berita", "Ekor berita"
+    ], correct:1,
+    explain:"Teras berita (lead) adalah paragraf pembuka yang merangkum inti peristiwa, biasanya memuat unsur 5W+1H."
+  },
+  {
+    q: "Unsur berita 'ADIKSIMBA' merupakan singkatan dari...",
+    opts: [
+      "Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana",
+      "Aktual, Data, Informasi, Kredibel, Sumber, Isi, Media, Berita, Analisis",
+      "Awal, Diksi, Kalimat, Struktur, Isi, Makna, Bahasa, Alur",
+      "Aman, Dinamis, Ikonik, Kuat, Simpel, Berimbang, Aktual"
+    ], correct:0,
+    explain:"ADIKSIMBA adalah singkatan dari unsur berita: Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana (5W+1H)."
+  },
+  {
+    q: "Kalimat 'Polisi mengatakan bahwa jalan tersebut akan ditutup selama tiga hari' merupakan contoh kalimat...",
+    opts: [
+      "Kalimat langsung", "Kalimat tidak langsung", "Kalimat tanya", "Kalimat perintah"
+    ], correct:1,
+    explain:"Kalimat tidak langsung melaporkan ucapan orang lain tanpa mengutip persis kata-katanya, biasanya diawali kata 'bahwa'."
+  },
+  {
+    q: "Manakah contoh kalimat langsung dalam teks berita?",
+    opts: [
+      "Kepala sekolah menyampaikan bahwa ujian akan dimajukan.",
+      "\"Kami akan segera memperbaiki jembatan ini,\" ujar Kepala Dinas PU.",
+      "Menurut warga, banjir sudah surut sejak pagi.",
+      "Ia menjelaskan penyebab kemacetan tersebut."
+    ], correct:1,
+    explain:"Kalimat langsung mengutip ucapan seseorang persis sesuai aslinya, ditandai tanda kutip (\" \")."
+  },
+  {
+    q: "Kata kerja mental sering muncul dalam teks berita, contohnya adalah...",
+    opts: [
+      "Berlari, melompat, memukul", "Menduga, menyimpulkan, berpendapat", "Menulis, membaca, menggambar", "Merah, biru, hijau"
+    ], correct:1,
+    explain:"Kata kerja mental menunjukkan aktivitas berpikir/merasakan, seperti menduga, menyimpulkan, meyakini, berpendapat — sering muncul saat mengutip pandangan narasumber."
+  },
+  {
+    q: "Konjungsi yang umum digunakan dalam teks berita untuk menunjukkan urutan waktu adalah...",
+    opts: [
+      "Kemudian, setelah itu, lalu", "Meskipun, walaupun", "Karena, sebab", "Atau, maupun"
+    ], correct:0,
+    explain:"Konjungsi temporal seperti 'kemudian', 'setelah itu', dan 'lalu' digunakan untuk menunjukkan urutan waktu peristiwa dalam berita."
+  },
+  {
+    q: "Bagian berita yang berisi informasi tambahan/kurang penting dan biasanya bisa dipotong tanpa mengubah inti berita disebut...",
+    opts: [
+      "Judul", "Teras berita", "Tubuh berita", "Ekor berita"
+    ], correct:3,
+    explain:"Ekor berita berisi informasi pelengkap yang paling kurang penting, sesuai prinsip piramida terbalik, sehingga paling aman dipotong saat penyuntingan."
+  },
+  {
+    q: "Menyunting (mengedit) teks berita bertujuan untuk...",
+    opts: [
+      "Menambahkan opini pribadi penulis",
+      "Memastikan berita akurat, jelas, dan sesuai kaidah bahasa sebelum dipublikasikan",
+      "Mengubah fakta agar lebih menarik",
+      "Memperpanjang tulisan sebanyak mungkin"
+    ], correct:1,
+    explain:"Penyuntingan berita bertujuan memastikan keakuratan fakta, kejelasan bahasa, dan kesesuaian dengan kaidah kebahasaan sebelum berita dipublikasikan."
+  }
+];
+
+let quizOrder = [];
+let quizIndex = 0;
+let quizAnswered = false;
+let quizStreak = 0;
+let quizResultHistory = []; // 'correct' | 'wrong' per question, for progress dots
+
+function shuffle(arr){
+  let a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function startQuiz(){
+  if(typeof renderTGTSteps === 'function') renderTGTSteps(3);
+  quizOrder = shuffle([...Array(quizBank.length).keys()]).slice(0,10);
+  quizIndex = 0;
+  state.quizCorrect = 0;
+  quizStreak = 0;
+  quizResultHistory = new Array(quizOrder.length).fill(null);
+  hideAll();
+  document.getElementById('screen-quiz').style.display='block';
+  renderQuizDots();
+  updateStreakBadge();
+  document.getElementById('quizMascotText').textContent = randomFrom([MASCOT_MESSAGES.start]);
+  renderQuiz();
+}
+
+function renderQuizDots(){
+  const dots = document.getElementById('quizDots');
+  dots.innerHTML = '';
+  quizResultHistory.forEach((r, i)=>{
+    const span = document.createElement('span');
+    if(r === 'correct') span.className = 'done-correct';
+    else if(r === 'wrong') span.className = 'done-wrong';
+    else if(i === quizIndex) span.className = 'current';
+    dots.appendChild(span);
+  });
+}
+
+function updateStreakBadge(pulse){
+  document.getElementById('quizStreakNum').textContent = quizStreak;
+  const badge = document.getElementById('quizStreakBadge');
+  if(pulse){
+    badge.classList.remove('pulse');
+    void badge.offsetWidth; // restart animation
+    badge.classList.add('pulse');
+  }
+}
+
+function renderQuiz(){
+  quizAnswered = false;
+  const total = quizOrder.length;
+  const qData = quizBank[quizOrder[quizIndex]];
+  document.getElementById('quizProgressLabel').textContent = (quizIndex+1)+"/"+total;
+  document.getElementById('quizProgressBar').style.width = ((quizIndex)/total*100)+"%";
+  document.getElementById('quizQuestion').textContent = qData.q;
+  const optsDiv = document.getElementById('quizOptions');
+  optsDiv.innerHTML = '';
+  const letters = ['A','B','C','D','E','F'];
+  const optOrder = shuffle([...Array(qData.opts.length).keys()]);
+  optOrder.forEach((oi, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    const letterSpan = document.createElement('span');
+    letterSpan.className = 'opt-letter';
+    letterSpan.textContent = letters[idx] || '?';
+    const textSpan = document.createElement('span');
+    textSpan.textContent = qData.opts[oi];
+    btn.appendChild(letterSpan);
+    btn.appendChild(textSpan);
+    btn.dataset.optText = qData.opts[oi];
+    btn.onclick = () => answerQuiz(oi, qData, btn);
+    optsDiv.appendChild(btn);
+  });
+  document.getElementById('quizFeedback').className='feedback';
+  document.getElementById('quizFeedback').textContent='';
+  document.getElementById('quizNextBtn').disabled = true;
+  renderQuizDots();
+}
+
+function answerQuiz(oi, qData, btnEl){
+  if(quizAnswered) return;
+  quizAnswered = true;
+  const allBtns = document.querySelectorAll('#quizOptions .option');
+  allBtns.forEach(b=>{
+    b.disabled = true;
+    if(b.dataset.optText === qData.opts[qData.correct]) b.classList.add('correct');
+  });
+  const fb = document.getElementById('quizFeedback');
+  const isCorrect = (oi === qData.correct);
+  const mascotText = document.getElementById('quizMascotText');
+  if(isCorrect){
+    btnEl.classList.add('correct');
+    state.score += 10;
+    state.quizCorrect += 1;
+    quizStreak += 1;
+    quizResultHistory[quizIndex] = 'correct';
+    fb.className='feedback show good';
+    fb.textContent = '✅ Benar! ' + qData.explain;
+    mascotText.textContent = randomFrom(MASCOT_MESSAGES.correctStreak);
+    updateStreakBadge(true);
+    if(quizStreak > 0 && quizStreak % 3 === 0) fireConfetti(24);
+    else fireConfetti(10);
+  } else {
+    btnEl.classList.add('wrong');
+    quizStreak = 0;
+    quizResultHistory[quizIndex] = 'wrong';
+    fb.className='feedback show bad';
+    fb.textContent = '❌ Belum tepat. ' + qData.explain;
+    mascotText.textContent = randomFrom(MASCOT_MESSAGES.wrong);
+    updateStreakBadge(false);
+  }
+  logAnswer({
+    mode: 'Kuis',
+    bagian: (quizIndex+1) + '/' + quizOrder.length,
+    item: qData.q,
+    jawabanSiswa: qData.opts[oi],
+    kunci: qData.opts[qData.correct],
+    status: isCorrect ? 'Benar' : 'Salah'
+  });
+  saveHud();
+  renderQuizDots();
+  document.getElementById('quizNextBtn').disabled = false;
+}
+
+function nextQuiz(){
+  quizIndex++;
+  if(quizIndex >= quizOrder.length){
+    document.getElementById('quizProgressBar').style.width = '100%';
+    finishQuiz();
+  } else {
+    renderQuiz();
+  }
+}
+
+function finishQuiz(){
+  hideAll();
+  document.getElementById('screen-result').style.display='block';
+  const total = quizOrder.length;
+  const correct = state.quizCorrect;
+  const pct = Math.round(correct/total*100);
+  document.getElementById('resultEmoji').textContent = pct>=80?'🏆':(pct>=50?'🎉':'📚');
+  document.getElementById('resultTitle').textContent = 'Kuis Selesai!';
+  document.getElementById('resultScore').textContent = correct+'/'+total+' benar ('+pct+'%)';
+  document.getElementById('resultDesc').textContent = pct>=80
+    ? 'Luar biasa! Kamu sudah sangat paham materi teks berita.'
+    : (pct>=50 ? 'Bagus! Terus asah pemahamanmu tentang teks berita.' : 'Yuk pelajari lagi materi struktur & unsur berita, lalu coba lagi!');
+  if(pct>=80) fireConfetti(60);
+  state.lastMode = 'quiz';
+  catatNilaiMode(1, pct, correct + '/' + total + ' soal benar');
+}
+
+/* ===================== DRAG DROP (SUSUN PIRAMIDA TERBALIK) ===================== */
+// Setiap ronde punya urutan struktur yang benar (correctSequence) DAN 1-2 kalimat
+// "jebakan" (distractors) yang bukan bagian dari struktur berita sama sekali
+// (opini pribadi atau info tidak relevan) — siswa harus menemukan & menyingkirkannya.
+const dragRounds = [
+  {
+    label: 'Ronde 1/2 (Pemadaman Listrik)',
+    durationMs: 75000,
+    correctSequence: [
+      {tag:'JUDUL', text:'PLN Lakukan Pemadaman Listrik Bergilir di Tiga Kecamatan'},
+      {tag:'TERAS', text:'PT PLN (Persero) melakukan pemadaman listrik bergilir di tiga kecamatan Kota Semarang pada Selasa (18/8) mulai pukul 09.00 hingga 15.00 WIB akibat perbaikan jaringan transmisi.'},
+      {tag:'TUBUH', text:'Menurut Manajer PLN setempat, perbaikan dilakukan untuk mengganti kabel yang sudah usang dan meningkatkan keandalan pasokan listrik ke wilayah tersebut.'},
+      {tag:'EKOR', text:'PLN mengimbau warga untuk mempersiapkan penerangan alternatif selama pemadaman berlangsung.'}
+    ],
+    distractors: [
+      {text:'Menurut saya, pemadaman listrik ini sangat merugikan warga dan seharusnya tidak perlu terjadi.', reason:'Ini opini pribadi, bukan fakta — teks berita harus objektif dan tidak memuat opini penulis.'}
+    ]
+  },
+  {
+    label: 'Ronde 2/2 (Absensi Digital Sekolah)',
+    durationMs: 60000,
+    correctSequence: [
+      {tag:'JUDUL', text:'SMA Negeri 2 Semarang Luncurkan Aplikasi Absensi Digital'},
+      {tag:'TERAS', text:'SMA Negeri 2 Semarang resmi meluncurkan aplikasi absensi digital bernama SIAP HADIR pada Senin (17/8) yang akan digunakan seluruh peserta didik mulai tahun ajaran ini.'},
+      {tag:'TUBUH 1', text:'Kepala Sekolah menjelaskan bahwa aplikasi tersebut dikembangkan untuk mempermudah pemantauan kehadiran siswa secara real-time oleh guru dan orang tua.'},
+      {tag:'TUBUH 2', text:'Aplikasi ini juga dilengkapi fitur notifikasi otomatis kepada orang tua apabila siswa tidak hadir tanpa keterangan.'},
+      {tag:'EKOR', text:'Sekolah berencana mengevaluasi efektivitas aplikasi ini pada akhir semester.'}
+    ],
+    distractors: [
+      {text:'Sementara itu, harga cabai di pasar tradisional Kota Semarang juga mengalami kenaikan pekan ini.', reason:'Ini informasi dari topik lain yang tidak relevan dengan berita peluncuran aplikasi sekolah.'},
+      {text:'Aplikasi semacam ini seharusnya sudah diterapkan sejak lama karena sangat bermanfaat.', reason:'Ini opini pribadi, bukan fakta — teks berita harus objektif dan tidak memuat opini penulis.'}
+    ]
+  }
+];
+
+let dragRoundIndex = 0;
+let dragStructureItems = [];
+let dragDiscardItems = [];
+let dragStartInfo = null; // {zone:'structure'|'discard', idx}
+let dragTimer = null;
+let dragTimeLeft = 0;
+let dragRoundScore = 0;
+let dragTotalScore = 0;
+let dragChecked = false;
+
+function buildDragItems(round){
+  const items = [];
+  round.correctSequence.forEach((s, i)=>{
+    items.push({ uid: 'seq'+i, text: s.text, tag: s.tag, isDistractor: false, correctIndex: i });
+  });
+  round.distractors.forEach((d, i)=>{
+    items.push({ uid: 'dis'+i, text: d.text, tag: null, isDistractor: true, reason: d.reason });
+  });
+  return shuffle(items);
+}
+
+let dragBenarTotal = 0, dragLangkahTotal = 0;
+
+function startDrag(){
+  if(typeof renderTGTSteps === 'function') renderTGTSteps(3);
+  dragRoundIndex = 0;
+  dragTotalScore = 0;
+  dragBenarTotal = 0; dragLangkahTotal = 0;
+  hideAll();
+  document.getElementById('screen-drag').style.display='block';
+  startDragRound();
+}
+
+function startDragRound(){
+  const round = dragRounds[dragRoundIndex];
+  dragStructureItems = buildDragItems(round);
+  dragDiscardItems = [];
+  dragChecked = false;
+  dragRoundScore = 0;
+  document.getElementById('dragRoundLabel').textContent = round.label;
+  document.getElementById('dragInstruction').innerHTML = dragRoundIndex === 0
+    ? 'Seret (drag) atau gunakan tombol ↑↓ untuk mengurutkan potongan berikut sesuai bentuk piramida di bawah: <b>Judul → Teras (Lead) → Tubuh Berita → Ekor Berita</b>. Awas, ada kalimat "jebakan" yang <b>BUKAN</b> bagian dari berita — pindahkan ke kotak "Bukan Bagian Berita"!'
+    : 'Ronde ini lebih sulit: tubuh berita terdiri dari <b>2 paragraf</b> dan ada <b>2 kalimat jebakan</b>. Waktu juga lebih singkat — semangat!';
+  document.getElementById('dragCheckBtn').style.display = 'inline-block';
+  document.getElementById('dragNextBtn').style.display = 'none';
+  document.getElementById('dragFeedback').className = 'feedback';
+  document.getElementById('dragFeedback').textContent = '';
+  renderDragZones();
+  startDragTimer(round.durationMs);
+}
+
+function startDragTimer(durationMs){
+  clearInterval(dragTimer);
+  dragTimeLeft = durationMs;
+  const bar = document.getElementById('dragTimerBar');
+  bar.style.width = '100%';
+  bar.style.background = '';
+  const step = 200;
+  dragTimer = setInterval(()=>{
+    dragTimeLeft -= step;
+    const pct = Math.max(0, (dragTimeLeft/durationMs)*100);
+    bar.style.width = pct + '%';
+    if(dragTimeLeft <= 0){
+      clearInterval(dragTimer);
+      if(!dragChecked){
+        const fb = document.getElementById('dragFeedback');
+        fb.className = 'feedback show bad';
+        fb.textContent = '⏰ Waktu habis! Susunanmu langsung diperiksa apa adanya.';
+        checkDrag();
+      }
+    }
+  }, step);
+}
+
+function renderDragZones(){
+  renderZoneList('dragList', dragStructureItems, 'structure');
+  renderZoneList('discardList', dragDiscardItems, 'discard');
+}
+
+function renderZoneList(elId, itemsArr, zone){
+  const list = document.getElementById(elId);
+  list.innerHTML = '';
+  itemsArr.forEach((item, idx) => {
+    const li = document.createElement('li');
+    li.draggable = true;
+    li.dataset.idx = idx;
+    li.dataset.zone = zone;
+    const numBadge = zone === 'structure'
+      ? `<span class="pos-num">${idx+1}</span>`
+      : `<span class="pos-num">🗑️</span>`;
+    const actionBtn = zone === 'structure'
+      ? `<button class="btn-move-discard" onclick="moveItem('${item.uid}','structure','discard')">🚩 Ini bukan bagian berita</button>`
+      : `<button class="btn-move-back" onclick="moveItem('${item.uid}','discard','structure')">↩️ Kembalikan ke susunan</button>`;
+    const orderBtns = zone === 'structure'
+      ? `<button class="btn btn-secondary" style="padding:2px 10px; font-size:.75rem;" onclick="moveDrag(${idx},-1)">↑</button>
+         <button class="btn btn-secondary" style="padding:2px 10px; font-size:.75rem;" onclick="moveDrag(${idx},1)">↓</button>`
+      : '';
+    li.innerHTML = `${numBadge}<span style="flex:1">${item.text}
+      <div class="item-actions">${orderBtns}${actionBtn}</div></span>`;
+    li.addEventListener('dragstart', ()=>{ li.classList.add('dragging'); dragStartInfo = {zone, idx}; });
+    li.addEventListener('dragend', ()=>{ li.classList.remove('dragging'); });
+    li.addEventListener('dragover', (e)=>{ e.preventDefault(); });
+    li.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      if(!dragStartInfo || dragStartInfo.zone !== zone) return; // only reorder within same zone via drag
+      const fromIdx = dragStartInfo.idx;
+      const toIdx = idx;
+      if(fromIdx===toIdx) return;
+      const moved = itemsArr.splice(fromIdx,1)[0];
+      itemsArr.splice(toIdx,0,moved);
+      renderDragZones();
+    });
+    list.appendChild(li);
+  });
+}
+
+function moveDrag(idx, dir){
+  const newIdx = idx+dir;
+  if(newIdx<0 || newIdx>=dragStructureItems.length) return;
+  const tmp = dragStructureItems[idx];
+  dragStructureItems[idx] = dragStructureItems[newIdx];
+  dragStructureItems[newIdx] = tmp;
+  renderDragZones();
+}
+
+function moveItem(uid, fromZone, toZone){
+  const fromArr = fromZone === 'structure' ? dragStructureItems : dragDiscardItems;
+  const toArr = toZone === 'structure' ? dragStructureItems : dragDiscardItems;
+  const i = fromArr.findIndex(it => it.uid === uid);
+  if(i === -1) return;
+  const [item] = fromArr.splice(i, 1);
+  toArr.push(item);
+  renderDragZones();
+}
+
+function checkDrag(){
+  if(dragChecked) return;
+  dragChecked = true;
+  clearInterval(dragTimer);
+  const round = dragRounds[dragRoundIndex];
+  const totalSlots = round.correctSequence.length;
+  const totalDistractors = round.distractors.length;
+
+  let structureCorrect = 0;
+  const structureLis = document.querySelectorAll('#dragList li');
+  dragStructureItems.forEach((item, idx)=>{
+    const li = structureLis[idx];
+    if(!li) return;
+    li.classList.remove('locked','shake-item','wrong-pos');
+    if(!item.isDistractor && item.correctIndex === idx){
+      structureCorrect++;
+      li.classList.add('locked');
+    } else {
+      li.classList.add('shake-item','wrong-pos');
+    }
+  });
+
+  let distractorCorrect = 0;
+  const discardLis = document.querySelectorAll('#discardList li');
+  dragDiscardItems.forEach((item, idx)=>{
+    const li = discardLis[idx];
+    if(!li) return;
+    li.classList.remove('distractor-caught','distractor-missed');
+    if(item.isDistractor){
+      distractorCorrect++;
+      li.classList.add('distractor-caught');
+    } else {
+      li.classList.add('distractor-missed'); // kalimat asli salah dibuang
+    }
+  });
+
+  const timeBonus = Math.max(0, Math.round((dragTimeLeft / round.durationMs) * 20));
+  const basePts = (structureCorrect * 10) + (distractorCorrect * 10);
+  const pts = basePts + (structureCorrect === totalSlots && distractorCorrect === totalDistractors ? timeBonus : 0);
+  dragBenarTotal += structureCorrect + distractorCorrect;
+  dragLangkahTotal += totalSlots + totalDistractors;
+  dragRoundScore = pts;
+  dragTotalScore += pts;
+  state.score += pts;
+  saveHud();
+
+  const fb = document.getElementById('dragFeedback');
+  const susunanSiswa = dragStructureItems.map(i=>i.isDistractor ? '[JEBAKAN]' : i.tag).join(' → ');
+  const susunanBenar = round.correctSequence.map(i=>i.tag).join(' → ');
+  const isPerfect = (structureCorrect === totalSlots && distractorCorrect === totalDistractors);
+
+  logAnswer({
+    mode: 'Susun Struktur',
+    bagian: round.label,
+    item: 'Urutan struktur + identifikasi kalimat jebakan',
+    jawabanSiswa: susunanSiswa + ' | Dibuang: ' + (dragDiscardItems.map(i=>i.text).join(' // ') || '-'),
+    kunci: susunanBenar + ' | Seharusnya dibuang: ' + round.distractors.map(d=>d.text).join(' // '),
+    status: isPerfect ? 'Sempurna' : `Struktur ${structureCorrect}/${totalSlots}, Jebakan ${distractorCorrect}/${totalDistractors}`
+  });
+
+  if(isPerfect){
+    fb.className = 'feedback show good';
+    fb.textContent = `✅ Sempurna! Struktur benar dan semua kalimat jebakan berhasil ditemukan (+${pts} poin, termasuk bonus kecepatan).`;
+    fireConfetti(50);
+  } else {
+    const missReasons = round.distractors
+      .filter(d => !dragDiscardItems.some(it => it.text === d.text))
+      .map(d => '• ' + d.reason);
+    fb.className = 'feedback show bad';
+    fb.textContent = `Struktur benar: ${structureCorrect}/${totalSlots} • Jebakan ditemukan: ${distractorCorrect}/${totalDistractors} (+${pts} poin). ${missReasons.length ? 'Yang terlewat: ' + missReasons.join(' ') : 'Cek lagi bagian yang ditandai merah.'}`;
+  }
+  document.getElementById('dragCheckBtn').style.display = 'none';
+  document.getElementById('dragNextBtn').style.display = 'inline-block';
+}
+
+function nextDragRound(){
+  dragRoundIndex++;
+  if(dragRoundIndex >= dragRounds.length){
+    hideAll();
+    document.getElementById('screen-result').style.display='block';
+    document.getElementById('resultEmoji').textContent = '🧩';
+    document.getElementById('resultTitle').textContent = 'Piramida Terbalik Tuntas!';
+    document.getElementById('resultScore').textContent = '+' + dragTotalScore + ' poin';
+    document.getElementById('resultDesc').textContent = 'Kamu berhasil menyelesaikan kedua ronde susun struktur, termasuk menemukan kalimat-kalimat jebakannya!';
+    state.lastMode = 'drag';
+    catatNilaiMode(2, dragLangkahTotal ? dragBenarTotal / dragLangkahTotal * 100 : 0,
+      dragBenarTotal + '/' + dragLangkahTotal + ' langkah benar (urutan + jebakan)');
+  } else {
+    startDragRound();
+  }
+}
+
+/* ===================== DETECTIVE (5W+1H) ===================== */
+const detectiveBank = [
+  {
+    text: `<b>Gempa Bumi Guncang Wilayah Selatan Jawa</b><br>Gempa berkekuatan 5,6 magnitudo mengguncang wilayah selatan Jawa pada Rabu (19/8) pukul 03.12 WIB. Menurut BMKG, gempa dipicu oleh aktivitas subduksi lempeng di Samudra Hindia. Getaran dirasakan hingga ke Yogyakarta dan Solo, namun belum ada laporan korban jiwa maupun kerusakan berat.`,
+    answers: {
+      apa: ["gempa bumi","gempa"],
+      dimana: ["wilayah selatan jawa","selatan jawa"],
+      kapan: ["rabu (19/8) pukul 03.12 wib","rabu, 19/8 pukul 03.12 wib","rabu 19/8 pukul 03.12 wib"],
+      siapa: ["bmkg"],
+      mengapa: ["aktivitas subduksi lempeng di samudra hindia","subduksi lempeng di samudra hindia"],
+      bagaimana: ["berkekuatan 5,6 magnitudo, getaran dirasakan hingga yogyakarta dan solo","5,6 magnitudo"]
+    }
+  },
+  {
+    text: `<b>Tim Voli Putri SMA Nusantara Raih Juara Nasional</b><br>Tim bola voli putri SMA Nusantara berhasil meraih gelar juara nasional dalam kejuaraan pelajar yang digelar di Jakarta, Sabtu (15/8). Kemenangan diraih setelah tim mengalahkan SMA Harapan Bangsa 3-1 pada babak final. Pelatih tim, Ibu Ratna, mengatakan bahwa kemenangan ini adalah hasil latihan intensif selama enam bulan.`,
+    answers: {
+      apa: ["tim voli putri sma nusantara meraih juara nasional","meraih gelar juara nasional"],
+      dimana: ["jakarta"],
+      kapan: ["sabtu (15/8)","sabtu, 15/8","sabtu 15/8"],
+      siapa: ["tim bola voli putri sma nusantara","sma nusantara"],
+      mengapa: ["latihan intensif selama enam bulan","hasil latihan intensif selama enam bulan"],
+      bagaimana: ["mengalahkan sma harapan bangsa 3-1 di babak final","3-1 pada babak final"]
+    }
+  },
+  {
+    text: `<b>Harga Cabai di Pasar Tradisional Melonjak Tajam</b><br>Harga cabai rawit di sejumlah pasar tradisional Kota Malang melonjak hingga 40 persen sejak awal Agustus. Pedagang menyebutkan kenaikan ini disebabkan oleh gagal panen akibat cuaca ekstrem di sentra produksi cabai. Kondisi ini membuat sejumlah ibu rumah tangga mengeluhkan naiknya biaya belanja harian.`,
+    answers: {
+      apa: ["harga cabai melonjak","harga cabai rawit melonjak tajam"],
+      dimana: ["pasar tradisional kota malang","kota malang"],
+      kapan: ["sejak awal agustus","awal agustus"],
+      siapa: ["pedagang","ibu rumah tangga"],
+      mengapa: ["gagal panen akibat cuaca ekstrem","cuaca ekstrem di sentra produksi cabai"],
+      bagaimana: ["melonjak hingga 40 persen","naik 40 persen"]
+    }
+  }
+];
+
+let detOrder = [];
+let detIndex = 0;
+const adiksimbaFields = [
+  {key:'apa', label:'Apa (What)'},
+  {key:'dimana', label:'Di mana (Where)'},
+  {key:'kapan', label:'Kapan (When)'},
+  {key:'siapa', label:'Siapa (Who)'},
+  {key:'mengapa', label:'Mengapa (Why)'},
+  {key:'bagaimana', label:'Bagaimana (How)'}
+];
+
+function detTitle(data){
+  const m = /<b>(.*?)<\/b>/i.exec(data.text || '');
+  return m ? m[1] : '';
+}
+
+let detBenarTotal = 0, detItemTotal = 0;
+
+function startDetective(){
+  if(typeof renderTGTSteps === 'function') renderTGTSteps(3);
+  // URUTAN TETAP (tidak diacak) agar semua perangkat menampilkan teks berita
+  // yang sama pada nomor yang sama — hasil antar-siswa jadi bisa dibandingkan.
+  detOrder = [...Array(detectiveBank.length).keys()];
+  detBenarTotal = 0; detItemTotal = 0;
+  detIndex = 0;
+  hideAll();
+  document.getElementById('screen-detective').style.display='block';
+  renderDetective();
+}
+
+function renderDetective(){
+  const data = detectiveBank[detOrder[detIndex]];
+  document.getElementById('detProgressLabel').textContent = (detIndex+1)+"/"+detOrder.length;
+  document.getElementById('detText').innerHTML = data.text;
+  const grid = document.getElementById('detGrid');
+  grid.innerHTML = '';
+  adiksimbaFields.forEach(f=>{
+    const div = document.createElement('div');
+    div.className = 'adiksimba-card';
+    div.id = 'det-'+f.key;
+    div.innerHTML = `<label for="input-${f.key}"><span class="magnifier" aria-hidden="true">🔎</span>${f.label}</label><input type="text" id="input-${f.key}" placeholder="Jawabanmu..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">`;
+    grid.appendChild(div);
+  });
+  document.getElementById('detFeedback').className='feedback';
+  document.getElementById('detFeedback').textContent='';
+  document.getElementById('detStampBox').innerHTML = '';
+  document.getElementById('detCheckBtn').style.display='inline-block';
+  document.getElementById('detNextBtn').style.display='none';
+}
+
+/* Normalisasi kuat & konsisten lintas perangkat (HP Android, iPhone, laptop).
+   Menyamakan bentuk Unicode, spasi khusus, tanda kutip/strip melengkung,
+   autocorrect keyboard, serta pemisah desimal koma/titik. */
+function normalize(s){
+  return String(s == null ? '' : s)
+    .normalize('NFKC')                                   // samakan bentuk Unicode (iOS sering NFD)
+    .replace(/[\u200B-\u200D\u2060\uFEFF]/g,'')          // hapus karakter tak terlihat
+    .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g,' ') // spasi khusus -> spasi biasa
+    .replace(/[\u2018\u2019\u02BC\u2032\u00B4\u0060]/g,"'")   // apostrof melengkung -> lurus
+    .replace(/[\u201C\u201D\u2033]/g,'"')                // kutip melengkung -> lurus
+    .replace(/[\u2010-\u2015\u2212\uFE63\uFF0D]/g,'-')  // en/em dash -> hyphen biasa
+    .toLowerCase()
+    .replace(/(\d)\s*[.,]\s*(\d)/g,'$1.$2')             // 5,6 == 5.6 ; 03.12 == 03,12
+    .replace(/(\d)\s*-\s*(\d)/g,'$1-$2')                // 3 - 1 == 3-1
+    .replace(/[^\p{L}\p{N}\s'.\-\/]/gu,' ')             // buang tanda baca lain: ( ) : ; " dsb
+    .replace(/(^|\s)[.\-\/]+|[.\-\/]+(?=\s|$)/g,'$1')   // buang tanda baca di tepi kata
+    .replace(/\s+/g,' ')                                // rapatkan spasi ganda
+    .trim();
+}
+
+/* Kata tugas yang tidak dihitung agar "di Jakarta" == "Jakarta" */
+const STOPWORDS_ID = new Set(['di','ke','dari','pada','yang','dan','atau','dengan','untuk','oleh','itu','ini','adalah','ialah','para','sebuah','seorang','serta','dalam','saat','ketika','karena','sebab','akibat','hingga','sampai','telah','sudah','akan','juga','yg','dg','dgn','tsb','a','an','the']);
+
+function answerTokens(s){
+  return normalize(s).split(' ').filter(w => w && !STOPWORDS_ID.has(w));
+}
+
+/* Pencocokan jawaban: toleran terhadap urutan kata, kata tugas, dan typo tanda baca,
+   tetapi tetap menolak jawaban kosong / terlalu pendek / asal. */
+function isAnswerCorrect(rawInput, acceptedList){
+  const it = answerTokens(rawInput);
+  if(it.length === 0) return false;
+  const inStr = ' ' + it.join(' ') + ' ';
+  return (acceptedList || []).some(key => {
+    const kt = answerTokens(key);
+    if(kt.length === 0) return false;
+    const kStr = ' ' + kt.join(' ') + ' ';
+    if(inStr.indexOf(kStr) !== -1 || kStr.indexOf(inStr) !== -1) return true; // sama / mengandung
+    const hit = kt.filter(w => it.indexOf(w) !== -1).length;
+    const coverKey = hit / kt.length;      // seberapa lengkap kunci tertutup jawaban
+    const coverInput = hit / it.length;    // agar tidak lolos hanya karena menyalin seluruh teks
+    return coverKey >= 0.7 && coverInput >= 0.4;
+  });
+}
+
+function checkDetective(){
+  const data = detectiveBank[detOrder[detIndex]];
+  let correctCount = 0;
+  adiksimbaFields.forEach(f=>{
+    const rawVal = document.getElementById('input-'+f.key).value;
+    const card = document.getElementById('det-'+f.key);
+    const isCorrect = isAnswerCorrect(rawVal, data.answers[f.key]);
+    card.classList.remove('correct','wrong');
+    const oldHint = card.querySelector('.det-key-hint');
+    if(oldHint) oldHint.remove();
+    if(isCorrect){
+      card.classList.add('correct');
+      correctCount++;
+    } else {
+      card.classList.add('wrong');
+      const hint = document.createElement('div');
+      hint.className = 'det-key-hint';
+      hint.innerHTML = 'Kunci: <b>' + data.answers[f.key][0] + '</b>';
+      card.appendChild(hint);
+    }
+    logAnswer({
+      mode: 'Detektif ADIKSIMBA',
+      bagian: 'Teks ' + (detIndex+1) + '/' + detOrder.length + ' — ' + detTitle(data),
+      item: f.label,
+      jawabanSiswa: rawVal || '(kosong)',
+      kunci: data.answers[f.key][0],
+      status: isCorrect ? 'Benar' : 'Salah'
+    });
+  });
+  detBenarTotal += correctCount;
+  detItemTotal += adiksimbaFields.length;
+  const fb = document.getElementById('detFeedback');
+  const pts = correctCount*5;
+  state.score += pts;
+  saveHud();
+  if(correctCount === adiksimbaFields.length){
+    fb.className = 'feedback show good';
+    fb.textContent = `✅ Sempurna! Semua unsur ADIKSIMBA berhasil ditemukan (+${pts} poin).`;
+    document.getElementById('detStampBox').innerHTML = '<span class="case-solved-stamp">🕵️ Kasus Terpecahkan!</span>';
+    fireConfetti(45);
+  } else {
+    fb.className = 'feedback show bad';
+    fb.textContent = `Ditemukan ${correctCount}/6 unsur dengan benar (+${pts} poin). Kotak merah menandakan jawaban perlu diperbaiki — coba baca ulang teks beritanya!`;
+    document.getElementById('detStampBox').innerHTML = '';
+  }
+  document.getElementById('detCheckBtn').style.display='none';
+  document.getElementById('detNextBtn').style.display='inline-block';
+}
+
+function nextDetective(){
+  detIndex++;
+  if(detIndex >= detOrder.length){
+    hideAll();
+    document.getElementById('screen-result').style.display='block';
+    document.getElementById('resultEmoji').textContent = '🔍';
+    document.getElementById('resultTitle').textContent = 'Investigasi Selesai!';
+    document.getElementById('resultScore').textContent = 'Skor total: '+state.score;
+    document.getElementById('resultDesc').textContent = 'Kamu telah menganalisis semua teks berita dan menemukan unsur ADIKSIMBA-nya.';
+    fireConfetti(50);
+    state.lastMode = 'detective';
+    catatNilaiMode(3, detItemTotal ? detBenarTotal / detItemTotal * 100 : 0,
+      detBenarTotal + '/' + detItemTotal + ' unsur ADIKSIMBA ditemukan');
+  } else {
+    renderDetective();
+  }
+}
+
+/* ===================== MATCHING (COCOKKAN ISTILAH) ===================== */
+const matchBank = [
+  {term:'Judul Berita', def:'Bagian yang memuat nama/inti singkat suatu berita, biasanya ditulis paling atas'},
+  {term:'Teras Berita (Lead)', def:'Paragraf pembuka yang merangkum inti peristiwa, biasanya memuat unsur 5W+1H'},
+  {term:'Tubuh Berita', def:'Bagian yang menjelaskan peristiwa secara lebih rinci setelah teras berita'},
+  {term:'Ekor Berita', def:'Bagian informasi tambahan yang paling kurang penting dan aman dipotong'},
+  {term:'Piramida Terbalik', def:'Pola penyajian berita dari informasi terpenting ke informasi kurang penting'},
+  {term:'Aktual', def:'Sifat berita yang informasinya baru terjadi dan masih hangat dibicarakan'},
+  {term:'Faktual', def:'Sifat berita yang berdasarkan kejadian nyata, bukan karangan atau opini'},
+  {term:'ADIKSIMBA', def:'Singkatan unsur berita: Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana'}
+];
+
+let matchState = { termOrder:[], defOrder:[], matchedCount:0, selectedTermIdx:null, percobaan:0 };
+
+function startMatching(){
+  if(typeof renderTGTSteps === 'function') renderTGTSteps(3);
+  matchState.termOrder = shuffle([...Array(matchBank.length).keys()]);
+  matchState.defOrder = shuffle([...Array(matchBank.length).keys()]);
+  matchState.matchedCount = 0;
+  matchState.selectedTermIdx = null;
+  matchState.percobaan = 0;
+  hideAll();
+  document.getElementById('screen-matching').style.display='block';
+  renderMatching();
+}
+
+function renderMatching(){
+  document.getElementById('matchProgressLabel').textContent = matchState.matchedCount+"/"+matchBank.length;
+  const termsDiv = document.getElementById('matchTerms');
+  const defsDiv = document.getElementById('matchDefs');
+  termsDiv.innerHTML = '';
+  defsDiv.innerHTML = '';
+  matchState.termOrder.forEach(idx=>{
+    const btn = document.createElement('button');
+    btn.className = 'match-item';
+    btn.textContent = matchBank[idx].term;
+    btn.dataset.idx = idx;
+    btn.onclick = () => clickTerm(idx, btn);
+    termsDiv.appendChild(btn);
+  });
+  matchState.defOrder.forEach(idx=>{
+    const btn = document.createElement('button');
+    btn.className = 'match-item';
+    btn.textContent = matchBank[idx].def;
+    btn.dataset.idx = idx;
+    btn.onclick = () => clickDef(idx, btn);
+    defsDiv.appendChild(btn);
+  });
+  document.getElementById('matchFeedback').className='feedback';
+  document.getElementById('matchFeedback').textContent='';
+}
+
+function clickTerm(idx, btnEl){
+  if(btnEl.classList.contains('matched')) return;
+  document.querySelectorAll('#matchTerms .match-item').forEach(b=>b.classList.remove('selected'));
+  btnEl.classList.add('selected');
+  matchState.selectedTermIdx = idx;
+}
+
+function clickDef(idx, btnEl){
+  if(btnEl.classList.contains('matched')) return;
+  if(matchState.selectedTermIdx === null) return;
+  const termIdx = matchState.selectedTermIdx;
+  const termBtn = document.querySelector(`#matchTerms .match-item[data-idx="${termIdx}"]`);
+  const isCorrect = (termIdx === idx);
+  matchState.percobaan++;
+  const fb = document.getElementById('matchFeedback');
+  logAnswer({
+    mode: 'Cocokkan Istilah',
+    bagian: '-',
+    item: matchBank[termIdx].term,
+    jawabanSiswa: matchBank[idx].def,
+    kunci: matchBank[termIdx].def,
+    status: isCorrect ? 'Benar' : 'Salah'
+  });
+  if(isCorrect){
+    termBtn.classList.remove('selected');
+    termBtn.classList.add('matched');
+    btnEl.classList.add('matched');
+    matchState.matchedCount++;
+    state.score += 15;
+    saveHud();
+    document.getElementById('matchProgressLabel').textContent = matchState.matchedCount+"/"+matchBank.length;
+    fb.className = 'feedback show good';
+    fb.textContent = '✅ Cocok! ' + matchBank[termIdx].term + ' = ' + matchBank[termIdx].def;
+    matchState.selectedTermIdx = null;
+    if(matchState.matchedCount === matchBank.length){
+      setTimeout(()=>{
+        if(document.getElementById('screen-matching').style.display === 'none') return;
+        hideAll();
+        document.getElementById('screen-result').style.display='block';
+        document.getElementById('resultEmoji').textContent = '🔗';
+        document.getElementById('resultTitle').textContent = 'Semua Istilah Tercocokkan!';
+        document.getElementById('resultScore').textContent = '+' + (matchBank.length*15) + ' poin';
+        document.getElementById('resultDesc').textContent = 'Kamu berhasil mencocokkan semua istilah teks berita dengan definisinya.';
+        state.lastMode = 'matching';
+        catatNilaiMode(4, matchBank.length / Math.max(matchBank.length, matchState.percobaan) * 100,
+          matchBank.length + ' pasangan tepat dari ' + matchState.percobaan + ' percobaan');
+      }, 900);
+    }
+  } else {
+    termBtn.classList.add('shake');
+    btnEl.classList.add('shake');
+    fb.className = 'feedback show bad';
+    fb.textContent = '❌ Belum cocok, coba lagi!';
+    setTimeout(()=>{
+      termBtn.classList.remove('shake','selected');
+      btnEl.classList.remove('shake');
+    }, 400);
+    matchState.selectedTermIdx = null;
+  }
+}
+
+/* ===================== EDITOR BERITA (CARI KESALAHAN) ===================== */
+const editorBank = [
+  {
+    sentences: [
+      "Wali Kota meresmikan taman kota baru di Jalan Merdeka pada Senin (17/8).",
+      "Taman seluas dua hektare itu dilengkapi area bermain anak dan jogging track.",
+      "Menurutnya taman ini akan diresmikan lagi minggu depan oleh gubernur yang sama pada hari yang sama.",
+      "Warga menyambut baik kehadiran taman tersebut sebagai ruang terbuka hijau baru."
+    ],
+    errorIdx: 2,
+    correction: "Kalimat ini tidak logis/kontradiktif: taman sudah diresmikan Wali Kota pada kalimat pertama, tidak mungkin diresmikan lagi oleh orang & hari yang sama minggu depan. Seharusnya dihapus atau diganti dengan informasi lain yang konsisten dengan fakta di kalimat pertama."
+  },
+  {
+    sentences: [
+      "Dinas Kesehatan mencatat kasus demam berdarah meningkat 20 persen di bulan Juli.",
+      "Kepala Dinas Kesehatan mengimbau warga untuk rutin melakukan 3M (menguras, menutup, mengubur).",
+      "Menurut saya, pemerintah seharusnya lebih tegas menangani masalah ini sejak dulu.",
+      "Ia menambahkan bahwa fogging akan dilakukan di titik-titik rawan mulai pekan depan."
+    ],
+    errorIdx: 2,
+    correction: "Kalimat ini berisi opini pribadi penulis ('Menurut saya') yang tidak sesuai kaidah teks berita — berita harus faktual dan objektif, bukan opini penulis."
+  },
+  {
+    sentences: [
+      "Tim SAR gabungan berhasil mengevakuasi lima pendaki yang tersesat di Gunung Arjuno.",
+      "Proses evakuasi berlangsung selama dua hari dua malam karena medan yang sulit.",
+      "Kelima pendaki dilaporkan dalam kondisi sehat wal afiat tanpa cedera serius.",
+      "Bagaimana caranya tim SAR bisa menemukan pendaki secepat itu padahal medannya sulit sekali?"
+    ],
+    errorIdx: 3,
+    correction: "Kalimat ini berbentuk kalimat tanya retoris yang tidak pada tempatnya dalam teks berita — teks berita menyampaikan fakta secara deklaratif, bukan mengajukan pertanyaan kepada pembaca."
+  }
+];
+
+let editorOrder = [];
+let editorIndex = 0;
+let editorSelectedIdx = null;
+
+let editorBenar = 0;
+
+function startEditor(){
+  if(typeof renderTGTSteps === 'function') renderTGTSteps(3);
+  editorOrder = shuffle([...Array(editorBank.length).keys()]);
+  editorIndex = 0;
+  editorBenar = 0;
+  hideAll();
+  document.getElementById('screen-editor').style.display='block';
+  renderEditor();
+}
+
+function renderEditor(){
+  editorSelectedIdx = null;
+  const data = editorBank[editorOrder[editorIndex]];
+  document.getElementById('editorProgressLabel').textContent = (editorIndex+1)+"/"+editorOrder.length;
+  const para = document.getElementById('editorPara');
+  para.innerHTML = '';
+  data.sentences.forEach((s, idx)=>{
+    const span = document.createElement('span');
+    span.className = 'sentence-chip';
+    span.textContent = s + ' ';
+    span.dataset.idx = idx;
+    span.onclick = () => selectSentence(idx);
+    para.appendChild(span);
+  });
+  document.getElementById('editorCorrection').className = 'correction-box';
+  document.getElementById('editorCorrection').textContent = '';
+  document.getElementById('editorFeedback').className='feedback';
+  document.getElementById('editorFeedback').textContent='';
+  document.getElementById('editorCheckBtn').style.display='inline-block';
+  document.getElementById('editorNextBtn').style.display='none';
+}
+
+function selectSentence(idx){
+  editorSelectedIdx = idx;
+  document.querySelectorAll('#editorPara .sentence-chip').forEach((el,i)=>{
+    el.classList.toggle('selected', i===idx);
+  });
+}
+
+function checkEditor(){
+  if(editorSelectedIdx === null){
+    const fb = document.getElementById('editorFeedback');
+    fb.className = 'feedback show bad';
+    fb.textContent = '⚠️ Pilih dulu kalimat yang menurutmu salah, ya!';
+    return;
+  }
+  const data = editorBank[editorOrder[editorIndex]];
+  const isCorrect = (editorSelectedIdx === data.errorIdx);
+  const chips = document.querySelectorAll('#editorPara .sentence-chip');
+  chips.forEach((el,i)=>{
+    el.classList.remove('selected');
+    if(i === data.errorIdx) el.classList.add('correct-mark');
+    else if(i === editorSelectedIdx) el.classList.add('wrong-mark');
+  });
+  const fb = document.getElementById('editorFeedback');
+  if(isCorrect){
+    editorBenar++;
+    state.score += 20;
+    fb.className = 'feedback show good';
+    fb.textContent = '✅ Tepat! Kamu menemukan kalimat yang bermasalah.';
+  } else {
+    fb.className = 'feedback show bad';
+    fb.textContent = '❌ Belum tepat. Kalimat yang bermasalah ditandai hijau di bawah ini.';
+  }
+  const corrBox = document.getElementById('editorCorrection');
+  corrBox.className = 'correction-box show';
+  corrBox.textContent = '📌 Penjelasan: ' + data.correction;
+  logAnswer({
+    mode: 'Editor Berita',
+    bagian: (editorIndex+1) + '/' + editorOrder.length,
+    item: 'Kalimat bermasalah dalam paragraf',
+    jawabanSiswa: data.sentences[editorSelectedIdx],
+    kunci: data.sentences[data.errorIdx],
+    status: isCorrect ? 'Benar' : 'Salah'
+  });
+  saveHud();
+  document.getElementById('editorCheckBtn').style.display='none';
+  document.getElementById('editorNextBtn').style.display='inline-block';
+}
+
+function nextEditor(){
+  editorIndex++;
+  if(editorIndex >= editorOrder.length){
+    hideAll();
+    document.getElementById('screen-result').style.display='block';
+    document.getElementById('resultEmoji').textContent = '✏️';
+    document.getElementById('resultTitle').textContent = 'Tugas Editor Selesai!';
+    document.getElementById('resultScore').textContent = 'Skor total: '+state.score;
+    document.getElementById('resultDesc').textContent = 'Kamu telah memeriksa semua contoh teks berita seperti editor sungguhan.';
+    state.lastMode = 'editor';
+    catatNilaiMode(5, editorOrder.length ? editorBenar / editorOrder.length * 100 : 0,
+      editorBenar + '/' + editorOrder.length + ' kalimat bermasalah ditemukan');
+  } else {
+    renderEditor();
+  }
+}
+
+/* ===================== TIME ATTACK (BENAR/SALAH) ===================== */
+const taBank = [
+  {stmt:"Teks berita harus bersifat aktual dan faktual.", answer:true},
+  {stmt:"Struktur teks berita disusun dari informasi paling tidak penting ke paling penting.", answer:false},
+  {stmt:"Teras berita (lead) biasanya memuat unsur 5W+1H.", answer:true},
+  {stmt:"ADIKSIMBA adalah singkatan dari Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana.", answer:true},
+  {stmt:"Opini pribadi penulis boleh dimasukkan bebas ke dalam teks berita.", answer:false},
+  {stmt:"Kalimat langsung dalam berita ditandai dengan tanda kutip.", answer:true},
+  {stmt:"Ekor berita adalah bagian paling penting yang tidak boleh dihilangkan.", answer:false},
+  {stmt:"Konjungsi 'kemudian' dan 'setelah itu' termasuk konjungsi temporal.", answer:true},
+  {stmt:"Kata kerja mental seperti 'menduga' dan 'menyimpulkan' sering muncul dalam kutipan narasumber.", answer:true},
+  {stmt:"Piramida terbalik berarti judul diletakkan di bagian paling bawah teks berita.", answer:false},
+  {stmt:"Berita yang faktual boleh berdasarkan karangan atau rekaan penulis.", answer:false},
+  {stmt:"Menyunting berita bertujuan memastikan keakuratan dan kejelasan sebelum dipublikasikan.", answer:true}
+];
+
+let taOrder = [];
+let taIndex = 0;
+let taScore = 0;
+let taTimer = null;
+let taTimeLeft = 0;
+const TA_DURATION = 8000; // ms per question
+let taAnswered = false;
+
+let taBenar = 0;
+
+function startTimeAttack(){
+  if(typeof renderTGTSteps === 'function') renderTGTSteps(3);
+  taOrder = shuffle([...Array(taBank.length).keys()]).slice(0,8);
+  taIndex = 0;
+  taScore = 0;
+  taBenar = 0;
+  hideAll();
+  document.getElementById('screen-timeattack').style.display='block';
+  renderTimeAttack();
+}
+
+function renderTimeAttack(){
+  taAnswered = false;
+  document.getElementById('taProgressLabel').textContent = (taIndex+1)+"/"+taOrder.length;
+  document.getElementById('taScoreStrip').textContent = 'Skor ronde ini: ' + taScore;
+  document.getElementById('taQuestion').textContent = taBank[taOrder[taIndex]].stmt;
+  document.getElementById('taFeedback').className='feedback';
+  document.getElementById('taFeedback').textContent='';
+  document.getElementById('taNextBtn').style.display='none';
+  document.getElementById('taTrueBtn').disabled = false;
+  document.getElementById('taFalseBtn').disabled = false;
+  startTaTimer();
+}
+
+function startTaTimer(){
+  clearInterval(taTimer);
+  taTimeLeft = TA_DURATION;
+  const bar = document.getElementById('taTimerBar');
+  bar.style.width = '100%';
+  const step = 100;
+  taTimer = setInterval(()=>{
+    taTimeLeft -= step;
+    const pct = Math.max(0, (taTimeLeft/TA_DURATION)*100);
+    bar.style.width = pct + '%';
+    if(taTimeLeft <= 0){
+      clearInterval(taTimer);
+      if(!taAnswered) timeUpTimeAttack();
+    }
+  }, step);
+}
+
+function timeUpTimeAttack(){
+  taAnswered = true;
+  document.getElementById('taTrueBtn').disabled = true;
+  document.getElementById('taFalseBtn').disabled = true;
+  const data = taBank[taOrder[taIndex]];
+  const fb = document.getElementById('taFeedback');
+  fb.className = 'feedback show bad';
+  fb.textContent = '⏰ Waktu habis! Jawaban yang benar: ' + (data.answer ? 'BENAR' : 'SALAH');
+  logAnswer({
+    mode: 'Tebak Cepat B/S',
+    bagian: (taIndex+1) + '/' + taOrder.length,
+    item: data.stmt,
+    jawabanSiswa: '(waktu habis)',
+    kunci: data.answer ? 'BENAR' : 'SALAH',
+    status: 'Waktu habis'
+  });
+  document.getElementById('taNextBtn').style.display='inline-block';
+}
+
+function answerTimeAttack(userAnswer){
+  if(taAnswered) return;
+  taAnswered = true;
+  clearInterval(taTimer);
+  document.getElementById('taTrueBtn').disabled = true;
+  document.getElementById('taFalseBtn').disabled = true;
+  const data = taBank[taOrder[taIndex]];
+  const isCorrect = (userAnswer === data.answer);
+  const fb = document.getElementById('taFeedback');
+  let pts = 0;
+  if(isCorrect){
+    taBenar++;
+    // faster answer = more points (based on remaining time)
+    pts = 5 + Math.round((taTimeLeft/TA_DURATION)*10);
+    taScore += pts;
+    state.score += pts;
+    fb.className = 'feedback show good';
+    fb.textContent = `✅ Benar! (+${pts} poin, makin cepat makin besar poinnya)`;
+  } else {
+    fb.className = 'feedback show bad';
+    fb.textContent = '❌ Kurang tepat. Jawaban yang benar: ' + (data.answer ? 'BENAR' : 'SALAH');
+  }
+  logAnswer({
+    mode: 'Tebak Cepat B/S',
+    bagian: (taIndex+1) + '/' + taOrder.length,
+    item: data.stmt,
+    jawabanSiswa: userAnswer ? 'BENAR' : 'SALAH',
+    kunci: data.answer ? 'BENAR' : 'SALAH',
+    status: isCorrect ? 'Benar' : 'Salah'
+  });
+  saveHud();
+  document.getElementById('taScoreStrip').textContent = 'Skor ronde ini: ' + taScore;
+  document.getElementById('taNextBtn').style.display='inline-block';
+}
+
+function nextTimeAttack(){
+  taIndex++;
+  if(taIndex >= taOrder.length){
+    clearInterval(taTimer);
+    hideAll();
+    document.getElementById('screen-result').style.display='block';
+    document.getElementById('resultEmoji').textContent = '⏱️';
+    document.getElementById('resultTitle').textContent = 'Tebak Cepat Selesai!';
+    document.getElementById('resultScore').textContent = '+' + taScore + ' poin';
+    document.getElementById('resultDesc').textContent = 'Kecepatan dan ketepatanmu menjawab sudah tercatat!';
+    state.lastMode = 'timeattack';
+    catatNilaiMode(6, taOrder.length ? taBenar / taOrder.length * 100 : 0,
+      taBenar + '/' + taOrder.length + ' pernyataan dijawab benar');
+  } else {
+    renderTimeAttack();
+  }
+}
+
+/* ===================== TULIS BERITA (WRITING) ===================== */
+const writingBank = [
+  {
+    tema: 'Kegiatan Sekolah',
+    fakta: {
+      apa: 'Lomba peringatan HUT Kemerdekaan RI ke-81',
+      siapa: 'Siswa-siswi SMA Negeri 2 Semarang',
+      kapan: 'Sabtu, 15 Agustus 2026',
+      dimana: 'Lapangan SMA Negeri 2 Semarang',
+      mengapa: 'Memupuk semangat nasionalisme dan kekompakan siswa',
+      bagaimana: 'Diikuti lebih dari 300 siswa dengan berbagai lomba seperti balap karung, tarik tambang, dan cerdas cermat'
+    },
+    keywords: {
+      apa: ['lomba','hut','kemerdekaan','17 agustus','ri ke-81'],
+      siapa: ['siswa','sma negeri 2 semarang','sman 2 semarang'],
+      kapan: ['15 agustus','sabtu'],
+      dimana: ['lapangan'],
+      mengapa: ['nasionalisme','kekompakan','semangat'],
+      bagaimana: ['300 siswa','balap karung','tarik tambang','cerdas cermat']
+    }
+  },
+  {
+    tema: 'Prestasi Akademik',
+    fakta: {
+      apa: 'Tim olimpiade sains meraih medali emas',
+      siapa: 'Tiga siswa kelas XI IPA SMA Negeri 2 Semarang',
+      kapan: 'Kamis, 13 Agustus 2026',
+      dimana: 'Olimpiade Sains Nasional tingkat provinsi di Semarang',
+      mengapa: 'Hasil pembinaan intensif selama tiga bulan oleh guru pembimbing',
+      bagaimana: 'Berhasil mengungguli 45 sekolah lain se-Jawa Tengah'
+    },
+    keywords: {
+      apa: ['olimpiade sains','medali emas','juara'],
+      siapa: ['tiga siswa','kelas xi ipa','sma negeri 2 semarang'],
+      kapan: ['13 agustus','kamis'],
+      dimana: ['semarang','provinsi'],
+      mengapa: ['pembinaan','tiga bulan','latihan'],
+      bagaimana: ['45 sekolah','jawa tengah','mengungguli']
+    }
+  },
+  {
+    tema: 'Lingkungan Hidup',
+    fakta: {
+      apa: 'Program penanaman 200 pohon di lingkungan sekolah',
+      siapa: 'OSIS bekerja sama dengan Dinas Lingkungan Hidup Kota Semarang',
+      kapan: 'Minggu, 16 Agustus 2026',
+      dimana: 'Area belakang dan taman SMA Negeri 2 Semarang',
+      mengapa: 'Mengurangi polusi udara dan mendukung program sekolah Adiwiyata',
+      bagaimana: 'Melibatkan seluruh siswa kelas X hingga XII secara bergotong royong'
+    },
+    keywords: {
+      apa: ['200 pohon','penanaman','penghijauan'],
+      siapa: ['osis','dinas lingkungan hidup'],
+      kapan: ['16 agustus','minggu'],
+      dimana: ['taman','belakang sekolah'],
+      mengapa: ['polusi','adiwiyata'],
+      bagaimana: ['gotong royong','kelas x','kelas xii']
+    }
+  }
+];
+
+let writeOrder = [];
+let writeIndex = 0;
+
+let writeNilaiSum = 0, writeNilaiN = 0;
+
+function startWriting(){
+  if(typeof renderTGTSteps === 'function') renderTGTSteps(3);
+  writeOrder = shuffle([...Array(writingBank.length).keys()]);
+  writeIndex = 0;
+  writeNilaiSum = 0; writeNilaiN = 0;
+  hideAll();
+  document.getElementById('screen-writing').style.display='block';
+  renderWriting();
+}
+
+function renderWriting(){
+  const data = writingBank[writeOrder[writeIndex]];
+  document.getElementById('writeProgressLabel').textContent = (writeIndex+1)+"/"+writeOrder.length;
+  const grid = document.getElementById('writeFaktaGrid');
+  grid.innerHTML = '';
+  const faktaLabels = {apa:'Apa', siapa:'Siapa', kapan:'Kapan', dimana:'Di mana', mengapa:'Mengapa', bagaimana:'Bagaimana'};
+  Object.keys(faktaLabels).forEach(k=>{
+    const div = document.createElement('div');
+    div.innerHTML = `<b>${faktaLabels[k]}:</b> ${data.fakta[k]}`;
+    grid.appendChild(div);
+  });
+  ['writeJudul','writeTeras','writeTubuh','writeEkor'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  updateWordCount('writeJudul','wcJudul');
+  updateWordCount('writeTeras','wcTeras');
+  updateWordCount('writeTubuh','wcTubuh');
+  updateWordCount('writeEkor','wcEkor');
+  document.getElementById('writeChecklistBox').style.display = 'none';
+  document.getElementById('writeFeedback').className = 'feedback';
+  document.getElementById('writeFeedback').textContent = '';
+  document.getElementById('writeCheckBtn').style.display = 'inline-block';
+  document.getElementById('writeNextBtn').style.display = 'none';
+}
+
+function countWords(text){
+  const t = text.trim();
+  if(!t) return 0;
+  return t.split(/\s+/).length;
+}
+
+function updateWordCount(taId, labelId){
+  const n = countWords(document.getElementById(taId).value);
+  document.getElementById(labelId).textContent = n + ' kata';
+}
+
+function checkWriting(){
+  const judul = document.getElementById('writeJudul').value.trim();
+  const teras = document.getElementById('writeTeras').value.trim();
+  const tubuh = document.getElementById('writeTubuh').value.trim();
+  const ekor = document.getElementById('writeEkor').value.trim();
+  const data = writingBank[writeOrder[writeIndex]];
+
+  const fullText = normalize([judul, teras, tubuh, ekor].join(' '));
+
+  const structChecks = [
+    {label:'Judul diisi dan ringkas (maks. 15 kata)', pass: judul.length>0 && countWords(judul)<=15},
+    {label:'Teras berita cukup ringkas & jelas (minimal 12 kata)', pass: countWords(teras)>=12},
+    {label:'Tubuh berita cukup rinci (minimal 20 kata)', pass: countWords(tubuh)>=20},
+    {label:'Ekor berita terisi (minimal 4 kata)', pass: countWords(ekor)>=4}
+  ];
+
+  const faktaLabels = {apa:'Apa', siapa:'Siapa', kapan:'Kapan', dimana:'Di mana', mengapa:'Mengapa', bagaimana:'Bagaimana'};
+  let faktaMatches = 0;
+  const faktaChecks = Object.keys(faktaLabels).map(k=>{
+    const found = data.keywords[k].some(kw => fullText.includes(normalize(kw)));
+    if(found) faktaMatches++;
+    return {label:'Fakta "'+faktaLabels[k]+'" tersirat dalam tulisan', pass: found};
+  });
+
+  const structPass = structChecks.filter(c=>c.pass).length;
+  const pts = structPass*5 + faktaMatches*5;
+  state.score += pts;
+  writeNilaiSum += Math.round(structPass/4*40 + faktaMatches/6*60);
+  writeNilaiN++;
+  saveHud();
+
+  const ul = document.getElementById('writeChecklist');
+  ul.innerHTML = '';
+  [...structChecks, ...faktaChecks].forEach(c=>{
+    const li = document.createElement('li');
+    li.className = c.pass ? 'pass' : 'fail';
+    li.textContent = (c.pass ? '✅ ' : '⚠️ ') + c.label;
+    ul.appendChild(li);
+  });
+  document.getElementById('writeChecklistBox').style.display = 'block';
+
+  const fb = document.getElementById('writeFeedback');
+  fb.className = 'feedback show ' + (structPass===4 && faktaMatches>=4 ? 'good' : 'bad');
+  fb.textContent = `Kelengkapan struktur: ${structPass}/4 • Fakta tersampaikan: ${faktaMatches}/6 (+${pts} poin). Tulisanmu sudah dikirim ke guru untuk dinilai lebih lanjut.`;
+
+  logAnswer({
+    mode: 'Tulis Berita',
+    bagian: (writeIndex+1) + '/' + writeOrder.length + ' (Tema: ' + data.tema + ')',
+    item: 'Judul: ' + judul + ' | Teras: ' + teras + ' | Tubuh: ' + tubuh + ' | Ekor: ' + ekor,
+    jawabanSiswa: judul + '\n' + teras + '\n' + tubuh + '\n' + ekor,
+    kunci: 'Fakta wajib dimuat: ' + Object.values(data.fakta).join(' | '),
+    status: `Struktur ${structPass}/4, Fakta ${faktaMatches}/6`
+  });
+
+  document.getElementById('writeCheckBtn').style.display = 'none';
+  document.getElementById('writeNextBtn').style.display = 'inline-block';
+}
+
+function nextWriting(){
+  writeIndex++;
+  if(writeIndex >= writeOrder.length){
+    hideAll();
+    document.getElementById('screen-result').style.display='block';
+    document.getElementById('resultEmoji').textContent = '✍️';
+    document.getElementById('resultTitle').textContent = 'Latihan Menulis Selesai!';
+    document.getElementById('resultScore').textContent = 'Skor total: '+state.score;
+    document.getElementById('resultDesc').textContent = 'Semua tulisan beritamu sudah tersimpan dan siap dinilai gurumu sesuai rubrik menulis teks berita.';
+    state.lastMode = 'writing';
+    catatNilaiMode(7, writeNilaiN ? writeNilaiSum / writeNilaiN : 0,
+      'Rata-rata rubrik ' + writeNilaiN + ' teks (struktur 40% + kelengkapan ADIKSIMBA 60%)');
+  } else {
+    renderWriting();
+  }
+}
+
+
+/* ===================== KERANGKA TGT (TEAMS GAMES TOURNAMENT) =====================
+   Setiap mode di Siklus 1 maupun Siklus 2 dijalankan dengan 5 tahap TGT:
+   1) Presentasi Kelas  2) Belajar Tim  3) Games  4) Turnamen  5) Rekognisi Tim   */
+const TGT_TAHAP = ['Presentasi Kelas','Belajar Tim','Games','Turnamen','Rekognisi Tim'];
+
+const TGT_MATERI = {
+  1: {
+    presentasi: [
+      'Teks berita menyampaikan informasi peristiwa secara <b>aktual</b> (baru terjadi) dan <b>faktual</b> (berdasarkan kenyataan, bukan opini).',
+      'Strukturnya: <b>judul – teras (lead) – tubuh – ekor</b>, disusun dengan pola piramida terbalik.',
+      'Ciri kebahasaan: kalimat langsung, konjungsi temporal, kata kerja mental, dan keterangan waktu–tempat.'
+    ],
+    strategi: [
+      'Bersama kelompok, sebutkan ulang 4 bagian struktur berita sebelum bermain.',
+      'Sepakati satu kalimat definisi berita versi kelompokmu agar mudah diingat saat games.'
+    ]
+  },
+  2: {
+    presentasi: [
+      'Pola <b>piramida terbalik</b>: informasi terpenting diletakkan paling awal, yang kurang penting di bagian akhir.',
+      'Teras berita memuat inti peristiwa; tubuh berita menguraikan rincian; ekor berita berisi pelengkap yang aman dipotong.',
+      'Kalimat opini pribadi dan informasi tak relevan <b>bukan</b> bagian struktur berita — harus disingkirkan.'
+    ],
+    strategi: [
+      'Latih kelompokmu mengurutkan potongan berita: mana yang paling penting dibaca lebih dulu?',
+      'Tandai ciri kalimat opini: "menurut saya", "sebaiknya", "sangat disayangkan".'
+    ]
+  },
+  3: {
+    presentasi: [
+      '<b>ADIKSIMBA</b> = Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana (5W+1H).',
+      'Unsur ADIKSIMBA paling banyak muncul pada <b>teras berita</b>, sisanya diperinci di tubuh berita.',
+      'Berita yang lengkap unsurnya lebih mudah dipahami pembaca.'
+    ],
+    strategi: [
+      'Bagi tugas dalam kelompok: tiap anggota fokus mencari 1–2 unsur.',
+      'Tulis jawaban singkat dan sesuai teks, jangan menambah informasi dari luar berita.'
+    ]
+  },
+  4: {
+    presentasi: [
+      'Istilah kunci teks berita: judul, teras (lead), tubuh, ekor, piramida terbalik, aktual, faktual, ADIKSIMBA.',
+      'Memahami istilah membuatmu lebih cepat menganalisis dan menulis berita.',
+      'Setiap istilah punya definisi khas — jangan tertukar antara teras dan tubuh berita.'
+    ],
+    strategi: [
+      'Saling menguji dalam kelompok: satu menyebut istilah, yang lain menyebut definisinya.',
+      'Ingat kata kunci pembeda tiap definisi, misalnya "paling atas" untuk judul.'
+    ]
+  },
+  5: {
+    presentasi: [
+      'Menyunting berita = memeriksa <b>keefektifan kalimat</b>, kebakuan kata, dan ketepatan ejaan.',
+      'Ciri kalimat tidak efektif: berulang (pleonasme), rancu, bertele-tele, atau menyisipkan opini.',
+      'Berita yang baik memakai <b>kata baku</b> dan kalimat lugas.'
+    ],
+    strategi: [
+      'Baca tiap kalimat dengan suara pelan dalam kelompok — kalimat janggal akan terasa.',
+      'Curigai kalimat yang mengandung kata "sangat-sangat", "agar supaya", atau penilaian pribadi.'
+    ]
+  },
+  6: {
+    presentasi: [
+      'Pemantapan konsep: sifat aktual–faktual, struktur, unsur, dan ciri kebahasaan teks berita.',
+      'Konjungsi temporal (kemudian, setelah itu) menyusun urutan peristiwa.',
+      'Kata kerja mental (menduga, menyimpulkan) sering muncul pada kutipan narasumber.'
+    ],
+    strategi: [
+      'Kecepatan itu penting, tetapi ketepatan menentukan poin turnamen kelompokmu.',
+      'Ulang cepat bersama kelompok: 3 hal yang BENAR dan 3 hal yang SALAH tentang teks berita.'
+    ]
+  },
+  7: {
+    presentasi: [
+      'Langkah menulis berita: kumpulkan data ➜ tentukan inti peristiwa ➜ susun teras ➜ kembangkan tubuh ➜ tambahkan ekor.',
+      'Teras berita wajib memuat unsur ADIKSIMBA yang paling penting.',
+      'Gunakan bahasa lugas, kalimat efektif, dan hindari opini pribadi.'
+    ],
+    strategi: [
+      'Diskusikan dalam kelompok: kalimat pembuka mana yang paling menarik untuk teras berita?',
+      'Pastikan seluruh data peristiwa terpakai, jangan ada unsur yang terlewat.'
+    ]
+  },
+  8: {
+    presentasi: [
+      'Mode puncak: seluruh materi teks berita diuji dalam satu turnamen — dari konsep sampai praktik menulis.',
+      'Nilai akhir = <b>40% turnamen kartu soal</b> + <b>60% keterampilan menulis</b>.',
+      'Inilah simulasi penuh model TGT: presentasi, belajar tim, games, turnamen, dan rekognisi tim.'
+    ],
+    strategi: [
+      'Lakukan ice breaking bersama kelompok agar fokus dan semangat sebelum turnamen.',
+      'Sepakati pembagian peran menulis: pembuka, isi, dan penutup berita.'
+    ]
+  }
+};
+
+/* Konversi nilai games (0-100) menjadi poin turnamen TGT */
+function poinTurnamenDariNilai(nilai){
+  if(nilai >= 90) return 60;
+  if(nilai >= 75) return 50;
+  if(nilai >= 60) return 40;
+  if(nilai >= 40) return 30;
+  return 20;
+}
+
+/* Predikat rekognisi tim menurut rata-rata poin turnamen */
+function predikatTim(rataPoin){
+  if(rataPoin === null) return {nama:'Belum ada predikat', kelas:'', piala:'🏳️'};
+  if(rataPoin >= 50) return {nama:'TIM SUPER', kelas:'super', piala:'🏆'};
+  if(rataPoin >= 45) return {nama:'TIM HEBAT', kelas:'hebat', piala:'🥈'};
+  if(rataPoin >= 40) return {nama:'TIM BAIK', kelas:'baik', piala:'🥉'};
+  return {nama:'TIM BERKEMBANG', kelas:'', piala:'🌱'};
+}
+
+/* Total & rata-rata poin turnamen (seluruh mode atau per siklus) */
+function statPoinTim(siklus){
+  const modes = MODE_META.filter(m => !siklus || m.siklus === siklus);
+  const isi = modes.map(m => state.nilai[m.no]).filter(d => d && typeof d.poinTurnamen === 'number');
+  const total = isi.reduce((a,d)=>a+d.poinTurnamen, 0);
+  return {
+    total: total,
+    jumlah: isi.length,
+    rata: isi.length ? Math.round(total / isi.length * 10) / 10 : null
+  };
+}
+
+/* ---------- TAHAP 1 & 2: layar Presentasi Kelas + Belajar Tim ---------- */
+let tgtModeAktif = null;
+const TGT_START = {1:'startQuiz',2:'startDrag',3:'startDetective',4:'startMatching',
+                   5:'startEditor',6:'startTimeAttack',7:'startWriting',8:'mulaiTGT'};
+
+function bukaModeTGT(no){
+  const meta = MODE_META.find(m => m.no === no);
+  if(!meta) return;
+  tgtModeAktif = no;
+  const materi = TGT_MATERI[no];
+  hideAll();
+  document.getElementById('screen-tgt-intro').style.display = 'block';
+
+  const tag = document.getElementById('tgtSiklusTag');
+  tag.textContent = 'Siklus ' + meta.siklus;
+  tag.style.background = meta.siklus === 1 ? '#2563eb' : '#d97706';
+  document.getElementById('tgtModeJudul').textContent = meta.emoji + ' Mode ' + no + ' — ' + meta.nama;
+  document.getElementById('tgtTimNama').textContent = state.student.kelompok || 'Kelompok';
+  document.getElementById('tgtSiswaNama').textContent = state.student.nama || '-';
+
+  renderTGTSteps(2);
+  const ulP = document.getElementById('tgtPresentasi');
+  ulP.innerHTML = materi.presentasi.map(t => '<li>' + t + '</li>').join('');
+  const ulS = document.getElementById('tgtStrategi');
+  ulS.innerHTML = materi.strategi.map(t => '<li>' + t + '</li>').join('');
+
+  logAnswer({
+    mode: 'TGT Mode ' + no,
+    bagian: 'Siklus ' + meta.siklus + ' — Tahap 1 & 2',
+    item: 'Presentasi Kelas & Belajar Tim: ' + meta.nama,
+    jawabanSiswa: 'Kelompok: ' + (state.student.kelompok || '-'),
+    kunci: '-',
+    status: 'Terlaksana'
+  });
+}
+
+function renderTGTSteps(aktif){
+  const nav = document.getElementById('tgtSteps');
+  if(!nav) return;
+  nav.innerHTML = TGT_TAHAP.map((t,i)=>{
+    const n = i + 1;
+    const kelas = n < aktif ? 'lewat' : (n === aktif ? 'aktif' : '');
+    return '<div class="tgt-step ' + kelas + '"' + (n === aktif ? ' aria-current="step"' : '') + '>' +
+      '<span class="no">' + (n < aktif ? '✓' : n) + '</span><div class="nm">' + t + '</div></div>';
+  }).join('');
+}
+
+function tgtMulaiGames(){
+  const no = tgtModeAktif;
+  if(!no) { goMenu(); return; }
+  ['resultTGT','ptkTGTBox'].forEach(id=>{ const el = document.getElementById(id); if(el) el.innerHTML = ''; });
+  const fn = window[TGT_START[no]];
+  if(typeof fn === 'function') fn();
+}
+
+/* ---------- TAHAP 4 & 5: turnamen + rekognisi tim ---------- */
+function renderRekognisi(no){
+  const meta = MODE_META.find(m => m.no === no);
+  const d = state.nilai[no];
+  if(!meta || !d) return '';
+  const st = statPoinTim(meta.siklus);
+  const pr = predikatTim(st.rata);
+  const tuntas = d.nilai >= PTK_KKM;
+  return '<div class="rekognisi ' + pr.kelas + '">' +
+    '<span class="piala" aria-hidden="true">' + pr.piala + '</span>' +
+    '<div style="font-size:.72rem; letter-spacing:.6px; text-transform:uppercase; color:#64748b; font-weight:800;">Tahap 4 — Turnamen</div>' +
+    '<div class="poin-besar">+' + d.poinTurnamen + ' poin</div>' +
+    '<div class="rincian">Nilai games <b>' + d.nilai + '</b> ' +
+    (tuntas ? '✅ tuntas' : '⚠️ belum mencapai KKM ' + PTK_KKM) +
+    ' • disumbangkan untuk <b>' + escapeHtml(state.student.kelompok || 'kelompok') + '</b></div>' +
+    '<hr style="border:none; border-top:1px dashed #cbd5e1; margin:12px 0;">' +
+    '<div style="font-size:.72rem; letter-spacing:.6px; text-transform:uppercase; color:#64748b; font-weight:800;">Tahap 5 — Rekognisi Tim</div>' +
+    '<div class="predikat">' + pr.nama + '</div>' +
+    '<div class="rincian">Rata-rata poin turnamen Siklus ' + meta.siklus + ': <b>' + (st.rata === null ? '-' : st.rata) +
+    '</b> dari ' + st.jumlah + ' mode • Total poin tim: <b>' + statPoinTim().total + '</b></div>' +
+    '</div>';
+}
+
+function tampilkanRekognisi(no){
+  renderTGTSteps(5);
+  const html = renderRekognisi(no);
+  ['resultTGT','ptkTGTBox'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerHTML = html;
+  });
+}
+
+/* ===================== MODE 8: PTK — TURNAMEN TGT SIKLUS 1 & 2 ===================== */
+const PTK_JUDUL = 'PENERAPAN MODEL PEMBELAJARAN KOOPERATIF TIPE TEAMS GAMES TOURNAMENT (TGT) BERBANTUAN ICE BREAKING BERBASIS MEDIA PERMAINAN SIGAP BERITA UNTUK MENINGKATKAN KETERAMPILAN MENULIS TEKS BERITA PESERTA DIDIK KELAS XI-10 SMA NEGERI 2 SEMARANG';
+const PTK_KKM = 75;
+
+const ptkConfig = {
+  1: {
+    nama: 'Siklus 1',
+    fokus: 'Mengenali & Menyusun Berita',
+    ice: {
+      emoji: '👏',
+      judul: 'Ice Breaking: “Tepuk Wartawan”',
+      instruksi: 'Sebelum turnamen dimulai, lakukan ice breaking bersama kelompokmu selama ±3 menit agar konsentrasi dan semangat belajar meningkat.',
+      langkah: [
+        'Guru menyebut “Wartawan!” — semua bertepuk 3 kali lalu berseru “Aktual!”.',
+        'Guru menyebut “Berita!” — semua bertepuk 2 kali lalu berseru “Faktual!”.',
+        'Guru menyebut satu unsur ADIKSIMBA (mis. “Kapan!”) — kelompok menjawab contohnya secepat mungkin.',
+        'Kelompok yang paling kompak dan cepat mendapat 1 poin awal untuk meja turnamen.'
+      ]
+    },
+    soal: [
+      { q:'Teks berita disebut bersifat aktual apabila…', opts:[
+        'peristiwanya baru terjadi dan masih hangat dibicarakan',
+        'peristiwanya dikarang oleh penulis berita',
+        'beritanya ditulis dengan bahasa yang panjang',
+        'beritanya memuat pendapat pribadi wartawan'], correct:0,
+        explain:'Aktual berarti informasinya baru, masih hangat, dan sedang menjadi perhatian masyarakat.' },
+      { q:'Urutan struktur teks berita berpola piramida terbalik yang tepat adalah…', opts:[
+        'Judul – Teras – Tubuh – Ekor',
+        'Judul – Tubuh – Teras – Ekor',
+        'Teras – Judul – Ekor – Tubuh',
+        'Ekor – Tubuh – Teras – Judul'], correct:0,
+        explain:'Piramida terbalik menempatkan informasi terpenting lebih dahulu: judul, teras (lead), tubuh, lalu ekor.' },
+      { q:'Bagian berita yang isinya paling kurang penting dan aman dipotong bila halaman terbatas adalah…', opts:[
+        'ekor berita','teras berita','judul berita','tubuh berita'], correct:0,
+        explain:'Ekor berita berisi informasi tambahan sehingga paling aman dipotong.' },
+      { q:'Unsur ADIKSIMBA yang menjawab pertanyaan “mengapa peristiwa itu terjadi” adalah…', opts:[
+        'Mengapa (why)','Bagaimana (how)','Siapa (who)','Kapan (when)'], correct:0,
+        explain:'“Mengapa” menjelaskan penyebab atau latar belakang terjadinya peristiwa.' },
+      { q:'Kalimat berikut yang merupakan fakta dalam teks berita adalah…', opts:[
+        'Sebanyak 320 siswa mengikuti upacara di lapangan sekolah pada Senin pagi.',
+        'Menurut saya upacara kemarin sangat membosankan sekali.',
+        'Sepertinya besok akan turun hujan deras di sekolah kita.',
+        'Alangkah baiknya jika semua siswa rajin membaca berita.'], correct:0,
+        explain:'Fakta memuat data yang dapat diverifikasi (jumlah, tempat, waktu), bukan opini atau perkiraan.' },
+      { q:'Teras berita (lead) yang baik sebaiknya…', opts:[
+        'memuat inti peristiwa dan unsur 5W+1H secara ringkas',
+        'berisi kesimpulan dan pesan moral penulis',
+        'menceritakan latar belakang sejarah peristiwa secara panjang',
+        'diisi kutipan lengkap seluruh narasumber'], correct:0,
+        explain:'Teras berita merangkum inti peristiwa secara padat, umumnya memuat unsur 5W+1H.' },
+      { q:'Ciri kebahasaan yang menonjol dalam teks berita adalah…', opts:[
+        'penggunaan kalimat langsung dan tidak langsung serta konjungsi temporal',
+        'penggunaan majas hiperbola di setiap paragraf',
+        'penggunaan kata seru dan bahasa gaul',
+        'penggunaan kalimat perintah pada seluruh bagian'], correct:0,
+        explain:'Teks berita banyak memakai kalimat langsung/tidak langsung, keterangan waktu-tempat, dan konjungsi temporal.' },
+      { q:'Judul berita yang paling tepat untuk peristiwa “siswa SMA Negeri 2 Semarang menang lomba debat tingkat provinsi” adalah…', opts:[
+        'Siswa SMAN 2 Semarang Juara Debat Tingkat Provinsi',
+        'Wah, Hebat Sekali Anak-Anak Sekolah Kita Itu Ya',
+        'Kisah Panjang Perjalanan Lomba Debat Yang Sangat Melelahkan Sekali',
+        'Debat'], correct:0,
+        explain:'Judul berita harus singkat, jelas, memuat inti peristiwa, dan tidak beropini.' }
+    ],
+    tulis: {
+      tema: 'Data Peristiwa Siklus 1 — Lomba Kebersihan Kelas',
+      fakta: {
+        apa: 'Lomba kebersihan dan keindahan kelas antarkelas XI',
+        siapa: 'OSIS bersama seluruh siswa kelas XI SMA Negeri 2 Semarang',
+        kapan: 'Jumat, 21 Agustus 2026, pukul 07.00–09.00 WIB',
+        dimana: 'Seluruh ruang kelas XI SMA Negeri 2 Semarang',
+        mengapa: 'Menumbuhkan budaya hidup bersih dan tanggung jawab bersama',
+        bagaimana: 'Dinilai tim juri guru dengan aspek kebersihan, kerapian, dan penghijauan; kelas XI-10 meraih juara pertama'
+      },
+      keywords: {
+        apa: ['lomba kebersihan','kebersihan kelas','keindahan kelas'],
+        siapa: ['osis','siswa kelas xi','sma negeri 2 semarang','sman 2 semarang'],
+        kapan: ['21 agustus','jumat','07.00'],
+        dimana: ['ruang kelas','kelas xi','sekolah'],
+        mengapa: ['hidup bersih','tanggung jawab','budaya bersih'],
+        bagaimana: ['juri','kerapian','penghijauan','xi-10','juara pertama']
+      }
+    }
+  },
+  2: {
+    nama: 'Siklus 2',
+    fokus: 'Menyunting & Menulis Mandiri',
+    ice: {
+      emoji: '🔗',
+      judul: 'Ice Breaking: “Sambung Fakta”',
+      instruksi: 'Lakukan ice breaking ±3 menit untuk melatih kecepatan berpikir sebelum turnamen siklus 2 dimulai.',
+      langkah: [
+        'Anggota pertama menyebut satu fakta peristiwa, misalnya “Kemarin pagi”.',
+        'Anggota berikutnya menyambung dengan unsur berita lain: siapa, di mana, apa yang terjadi.',
+        'Kalimat harus tetap logis dan memakai bahasa baku — yang tersendat menyebutkan satu kata baku sebagai “denda”.',
+        'Kelompok yang berhasil menyusun satu kalimat berita utuh tanpa terputus mendapat 1 poin awal.'
+      ]
+    },
+    soal: [
+      { q:'Kalimat berikut yang paling efektif untuk teks berita adalah…', opts:[
+        'Kepala sekolah membuka kegiatan literasi pada Senin pagi.',
+        'Kepala sekolah itu beliau membuka daripada kegiatan literasi tersebut pada hari Senin pagi.',
+        'Pada hari Senin pagi kemarin itu dibukanya kegiatan literasi oleh beliau kepala sekolah.',
+        'Kegiatan literasi dibuka oleh beliau yang mana adalah kepala sekolah pada Senin pagi.'], correct:0,
+        explain:'Kalimat efektif hemat kata, tidak berulang, dan strukturnya jelas (S-P-O-K).' },
+      { q:'Konjungsi temporal yang tepat melengkapi kalimat “Api berhasil dipadamkan … petugas datang” adalah…', opts:[
+        'setelah','walaupun','karena','meskipun'], correct:0,
+        explain:'Konjungsi temporal menghubungkan urutan waktu; “setelah” menunjukkan urutan peristiwa.' },
+      { q:'Penulisan kata baku yang tepat adalah…', opts:[
+        'narasumber, praktik, izin, atlet',
+        'nara sumber, praktek, ijin, atlit',
+        'narasumber, praktek, izin, atlit',
+        'nara sumber, praktik, ijin, atlet'], correct:0,
+        explain:'Bentuk baku menurut KBBI: narasumber, praktik, izin, atlet.' },
+      { q:'Penulisan kalimat langsung dalam berita yang benar adalah…', opts:[
+        '“Kegiatan ini akan rutin digelar setiap semester,” kata Ibu Ratna.',
+        '“Kegiatan ini akan rutin digelar setiap semester” kata Ibu Ratna.',
+        'Kata Ibu Ratna “kegiatan ini akan rutin digelar setiap semester”.',
+        '“kegiatan ini akan rutin digelar setiap semester,” Kata Ibu Ratna.'], correct:0,
+        explain:'Kalimat langsung diapit tanda petik, diakhiri koma sebelum penutup petik, dan pengiring ditulis huruf kecil.' },
+      { q:'Kalimat yang mengandung opini sehingga perlu disunting dari teks berita adalah…', opts:[
+        'Menurut saya, kegiatan seperti ini paling bagus dibandingkan kegiatan lain.',
+        'Kegiatan diikuti 240 siswa dari 8 kelas.',
+        'Acara berlangsung di aula sekolah pada pukul 08.00 WIB.',
+        'Panitia menyediakan 12 stan pameran karya siswa.'], correct:0,
+        explain:'Berita harus faktual; kalimat beropini seperti “menurut saya … paling bagus” tidak layak masuk berita.' },
+      { q:'Perbaikan yang tepat untuk kalimat “Para siswa-siswa banyak yang mengikuti lomba tersebut” adalah…', opts:[
+        'Para siswa mengikuti lomba tersebut.',
+        'Para siswa-siswa mengikuti lomba tersebut.',
+        'Siswa-siswa para mengikuti lomba itu.',
+        'Banyak para siswa-siswa mengikuti lomba tersebut.'], correct:0,
+        explain:'Kata “para” sudah bermakna jamak sehingga tidak perlu diulang dengan bentuk “siswa-siswa”.' },
+      { q:'Bagian yang wajib disunting jika sebuah teks berita memuat data “sekitar 1.000-an lebih kurang siswa” adalah…', opts:[
+        'ketidakjelasan data karena bertumpuknya kata perkiraan',
+        'penggunaan huruf kapital pada awal kalimat',
+        'peletakan judul berita di bagian atas',
+        'pemakaian konjungsi antarparagraf'], correct:0,
+        explain:'Data berita harus pasti dan tidak bertumpuk kata perkiraan (“sekitar”, “-an”, “lebih kurang”).' },
+      { q:'Langkah paling tepat sebelum berita dipublikasikan adalah…', opts:[
+        'menyunting keakuratan fakta, ejaan, dan keefektifan kalimat',
+        'menambah opini penulis agar berita lebih menarik',
+        'memperpanjang tulisan hingga memenuhi satu halaman',
+        'mengganti data narasumber dengan perkiraan sendiri'], correct:0,
+        explain:'Penyuntingan memastikan berita akurat, sesuai kaidah kebahasaan, dan mudah dipahami.' }
+    ],
+    tulis: {
+      tema: 'Data Peristiwa Siklus 2 — Festival Literasi Sekolah',
+      fakta: {
+        apa: 'Festival Literasi Sekolah bertema “Menulis Berita, Menyuarakan Fakta”',
+        siapa: 'Perpustakaan sekolah bersama 240 siswa kelas XI SMA Negeri 2 Semarang',
+        kapan: 'Rabu, 26 Agustus 2026, pukul 08.00–12.00 WIB',
+        dimana: 'Aula dan halaman depan SMA Negeri 2 Semarang',
+        mengapa: 'Meningkatkan minat baca dan keterampilan menulis teks berita peserta didik',
+        bagaimana: 'Diisi pameran 12 stan mading, lomba menulis berita, dan pelatihan bersama jurnalis media lokal'
+      },
+      keywords: {
+        apa: ['festival literasi','menyuarakan fakta','literasi sekolah'],
+        siapa: ['perpustakaan','240 siswa','kelas xi','sma negeri 2 semarang','sman 2 semarang'],
+        kapan: ['26 agustus','rabu','08.00'],
+        dimana: ['aula','halaman depan','sekolah'],
+        mengapa: ['minat baca','keterampilan menulis','menulis teks berita'],
+        bagaimana: ['12 stan','mading','lomba menulis','jurnalis','pelatihan']
+      }
+    }
+  }
+};
+
+/* Pemetaan 8 mode ke siklus PTK: Siklus 1 = mode 1-4, Siklus 2 = mode 5-8 */
+const MODE_META = [
+  {no:1, key:'quiz',       nama:'Kuis Wartawan Cilik',        siklus:1, emoji:'🧠'},
+  {no:2, key:'drag',       nama:'Susun Piramida Terbalik',    siklus:1, emoji:'🧩'},
+  {no:3, key:'detective',  nama:'Detektif ADIKSIMBA',         siklus:1, emoji:'🔍'},
+  {no:4, key:'matching',   nama:'Cocokkan Istilah',           siklus:1, emoji:'🔗'},
+  {no:5, key:'editor',     nama:'Editor Berita',              siklus:2, emoji:'✏️'},
+  {no:6, key:'timeattack', nama:'Tebak Cepat B/S',            siklus:2, emoji:'⏱️'},
+  {no:7, key:'writing',    nama:'Tulis Berita',               siklus:2, emoji:'✍️'},
+  {no:8, key:'tgt',        nama:'Turnamen TGT + Menulis',     siklus:2, emoji:'🏆'}
+];
+
+function defaultNilai(){
+  const o = {};
+  MODE_META.forEach(m => { o[m.no] = null; });
+  return o;
+}
+if(!state.nilai) state.nilai = defaultNilai();
+
+/* Catat nilai akhir sebuah mode (0-100) sebagai data PTK */
+function catatNilaiMode(no, nilaiRaw, detail){
+  const meta = MODE_META.find(m => m.no === no);
+  if(!meta) return;
+  const nilai = Math.max(0, Math.min(100, Math.round(nilaiRaw || 0)));
+  const prev = state.nilai[no];
+  const poin = poinTurnamenDariNilai(nilai);
+  state.nilai[no] = {
+    nilai: nilai,
+    poinTurnamen: poin,
+    detail: detail || '',
+    percobaan: (prev && prev.percobaan ? prev.percobaan : 0) + 1,
+    waktu: new Date().toLocaleString('id-ID')
+  };
+  logAnswer({
+    mode: 'NILAI MODE ' + no,
+    bagian: 'Siklus ' + meta.siklus,
+    item: meta.nama,
+    jawabanSiswa: detail || '-',
+    kunci: 'KKM ' + PTK_KKM,
+    status: 'Nilai ' + nilai + ' — ' + (nilai >= PTK_KKM ? 'TUNTAS' : 'BELUM TUNTAS')
+  });
+  const stTim = statPoinTim(meta.siklus);
+  logAnswer({
+    mode: 'TGT Mode ' + no,
+    bagian: 'Siklus ' + meta.siklus + ' — Tahap 4 & 5',
+    item: 'Turnamen & Rekognisi Tim: ' + meta.nama,
+    jawabanSiswa: 'Poin turnamen ' + poin + ' untuk ' + (state.student.kelompok || '-'),
+    kunci: 'Rata-rata poin siklus ' + (stTim.rata === null ? '-' : stTim.rata),
+    status: predikatTim(stTim.rata).nama
+  });
+  renderMenuNilai();
+  tampilkanRekognisi(no);
+  saveHud();
+  kirimRekapKeGuru();
+}
+
+/* Statistik siklus untuk rekap PTK */
+function statSiklus(n){
+  const modes = MODE_META.filter(m => m.siklus === n);
+  const isi = modes.map(m => state.nilai[m.no]).filter(d => d && typeof d.nilai === 'number');
+  const jml = isi.length;
+  const rata = jml ? Math.round(isi.reduce((a,d)=>a+d.nilai,0) / jml * 10) / 10 : null;
+  const tuntas = isi.filter(d => d.nilai >= PTK_KKM).length;
+  return {
+    siklus: n, totalMode: modes.length, selesai: jml, rata: rata, tuntas: tuntas,
+    persenTuntas: jml ? Math.round(tuntas / jml * 100) : null,
+    lengkap: jml === modes.length
+  };
+}
+
+let ptkOrder = [];
+let ptkIndex = 0;
+let ptkAnswered = false;
+let ptkSesi = { poin:0, benar:0, riwayat:[] };
+
+/* Konfigurasi mode 8: satu kali jalan (ice breaking -> turnamen kartu soal -> menulis) */
+const tgtConfig = {
+  nama: 'Turnamen TGT + Menulis',
+  fokus: 'Ice breaking ➜ turnamen kartu soal ➜ menulis teks berita',
+  ice: ptkConfig[1].ice,
+  soal: ptkConfig[1].soal.slice(0,5).concat(ptkConfig[2].soal.slice(0,5)), // 10 kartu soal turnamen
+  tulis: ptkConfig[2].tulis
+};
+
+/* ---------- LAYAR REKAP DATA PTK ---------- */
+function showRekapPTK(){
+  hideAll();
+  document.getElementById('screen-ptk').style.display = 'block';
+  renderPTKRekap();
+}
+
+function renderPTKRekap(){
+  const box = document.getElementById('ptkRekapBox');
+  const s1 = statSiklus(1), s2 = statSiklus(2);
+
+  const baris = MODE_META.map(m=>{
+    const d = state.nilai[m.no];
+    const kelas = m.siklus === 1 ? 'row-s1' : 'row-s2';
+    if(!d) return '<tr class="' + kelas + '"><td>' + m.no + '</td><td class="left">' + m.emoji + ' ' + m.nama +
+      '</td><td>Siklus ' + m.siklus + '</td><td style="color:#94a3b8;">-</td><td style="color:#94a3b8;">-</td><td style="color:#94a3b8;">belum dikerjakan</td></tr>';
+    return '<tr class="' + kelas + '"><td>' + m.no + '</td><td class="left">' + m.emoji + ' ' + m.nama +
+      '</td><td>Siklus ' + m.siklus + '</td><td><b>' + d.nilai + '</b></td><td>' + (d.poinTurnamen || 0) + '</td><td>' +
+      (d.nilai >= PTK_KKM ? '✅ Tuntas' : '⚠️ Belum tuntas') + '</td></tr>';
+  }).join('');
+
+  const ringkas = st => {
+    const pt = statPoinTim(st.siklus);
+    const pr = predikatTim(pt.rata);
+    return '<tr><td class="left"><b>Siklus ' + st.siklus + '</b> (mode ' + (st.siklus === 1 ? '1–4' : '5–8') + ')</td>' +
+      '<td>' + st.selesai + '/' + st.totalMode + '</td>' +
+      '<td>' + (st.rata === null ? '-' : '<b>' + st.rata + '</b>') + '</td>' +
+      '<td>' + (st.persenTuntas === null ? '-' : st.tuntas + '/' + st.selesai + ' (' + st.persenTuntas + '%)') + '</td>' +
+      '<td>' + pt.total + (pt.rata === null ? '' : ' <span style="color:#94a3b8;">(x̄ ' + pt.rata + ')</span>') + '</td>' +
+      '<td>' + pr.piala + ' ' + (pt.rata === null ? '-' : pr.nama) + '</td></tr>';
+  };
+
+  let html = '<div class="ptk-rekap">' +
+    '<h3>📊 Rekap Data PTK — Nilai per Mode (KKM ' + PTK_KKM + ')</h3>' +
+    '<div class="tabel-scroll"><table class="ptk-table"><thead><tr>' +
+    '<th>No</th><th>Mode Permainan</th><th>Siklus</th><th>Nilai</th><th>Poin TGT</th><th>Ketuntasan</th>' +
+    '</tr></thead><tbody>' + baris + '</tbody></table></div><div class="scroll-hint">↔ Geser tabel untuk melihat kolom lainnya</div>' +
+    '<h3 style="margin-top:16px;">Rekapitulasi per Siklus</h3>' +
+    '<div class="tabel-scroll"><table class="ptk-table"><thead><tr>' +
+    '<th>Siklus</th><th>Mode Selesai</th><th>Rata-rata Nilai</th><th>Ketuntasan</th><th>Poin Turnamen</th><th>Rekognisi Tim</th>' +
+    '</tr></thead><tbody>' + ringkas(s1) + ringkas(s2) + '</tbody></table></div>';
+
+  html += '<div class="ptk-bar-wrap">' +
+    '<div class="ptk-bar-row"><span class="lbl">Siklus 1</span><div class="ptk-bar"><div class="fill-1" style="width:' + (s1.rata || 0) + '%"></div></div><span>' + (s1.rata === null ? '-' : s1.rata) + '</span></div>' +
+    '<div class="ptk-bar-row"><span class="lbl">Siklus 2</span><div class="ptk-bar"><div class="fill-2" style="width:' + (s2.rata || 0) + '%"></div></div><span>' + (s2.rata === null ? '-' : s2.rata) + '</span></div>' +
+    '</div>';
+
+  if(s1.rata !== null && s2.rata !== null){
+    const selisih = Math.round((s2.rata - s1.rata) * 10) / 10;
+    const persen = s1.rata > 0 ? Math.round((s2.rata - s1.rata) / s1.rata * 1000) / 10 : 0;
+    const gain = s1.rata >= 100 ? 1 : (s2.rata - s1.rata) / (100 - s1.rata);
+    const gainR = Math.round(gain * 100) / 100;
+    const kategori = gainR >= 0.7 ? 'tinggi' : (gainR >= 0.3 ? 'sedang' : 'rendah');
+    html += '<div class="ptk-gain' + (selisih > 0 ? ' naik' : '') + '">' +
+      (selisih > 0 ? '📈' : (selisih === 0 ? '➡️' : '📉')) +
+      ' Peningkatan Siklus 1 ➜ Siklus 2: <b>' + (selisih > 0 ? '+' : '') + selisih + ' poin</b>' +
+      (persen ? ' (' + (persen > 0 ? '+' : '') + persen + '%)' : '') +
+      (selisih > 0 ? ' • N-Gain <b>' + gainR + '</b> (kategori ' + kategori + ')' : '') +
+      '<br>Ketuntasan: Siklus 1 <b>' + (s1.persenTuntas === null ? '-' : s1.persenTuntas + '%') +
+      '</b> ➜ Siklus 2 <b>' + (s2.persenTuntas === null ? '-' : s2.persenTuntas + '%') + '</b>' +
+      (s1.lengkap && s2.lengkap ? '' : '<br><span style="font-weight:400;">Catatan: rata-rata dihitung dari mode yang sudah dikerjakan. Selesaikan seluruh 8 mode agar data siklus lengkap.</span>') +
+      '</div>';
+  } else {
+    html += '<div class="ptk-gain">ℹ️ Kerjakan mode 1–4 (Siklus 1) dan mode 5–8 (Siklus 2) untuk melihat perbandingan dan peningkatan hasil belajar.</div>';
+  }
+  html += '</div>';
+  box.innerHTML = html;
+  box.style.display = 'block';
+}
+
+/* Unduh rekap PTK siap tempel ke laporan */
+function downloadRekapPTK(){
+  if(!state.student.nama){ alert('Isi dulu Nama dan Kelompok ya!'); return; }
+  const s1 = statSiklus(1), s2 = statSiklus(2);
+  const rows = [];
+  rows.push(['REKAP DATA PENELITIAN TINDAKAN KELAS (PTK)']);
+  rows.push(['Judul', PTK_JUDUL]);
+  rows.push(['Sekolah', 'SMA Negeri 2 Semarang']);
+  rows.push(['Kelas', 'XI-10']);
+  rows.push(['Mata Pelajaran', 'Bahasa Indonesia — Teks Berita']);
+  rows.push(['Media', 'Permainan SIGAP BERITA (8 mode)']);
+  rows.push(['Model Pembelajaran', 'Kooperatif tipe TGT (Presentasi Kelas - Belajar Tim - Games - Turnamen - Rekognisi Tim) berbantuan Ice Breaking']);
+  rows.push(['KKM', PTK_KKM]);
+  rows.push(['Nama Peserta Didik', state.student.nama]);
+  rows.push(['Kelompok', state.student.kelompok]);
+  rows.push(['Waktu Unduh', new Date().toLocaleString('id-ID')]);
+  rows.push([]);
+  rows.push(['No','Mode Permainan','Siklus','Nilai','Poin Turnamen TGT','Ketuntasan','Percobaan','Waktu Pengerjaan','Rincian']);
+  MODE_META.forEach(m=>{
+    const d = state.nilai[m.no];
+    rows.push([
+      m.no, m.nama, 'Siklus ' + m.siklus,
+      d ? d.nilai : '', d ? d.poinTurnamen : '',
+      d ? (d.nilai >= PTK_KKM ? 'Tuntas' : 'Belum Tuntas') : 'Belum dikerjakan',
+      d ? d.percobaan : '', d ? d.waktu : '', d ? d.detail : ''
+    ]);
+  });
+  rows.push([]);
+  rows.push(['REKAPITULASI PER SIKLUS']);
+  const p1 = statPoinTim(1), p2 = statPoinTim(2);
+  rows.push(['Siklus','Cakupan Mode','Mode Selesai','Rata-rata Nilai','Jumlah Tuntas','Persentase Ketuntasan (%)','Total Poin Turnamen','Rata-rata Poin Turnamen','Rekognisi Tim']);
+  rows.push(['Siklus 1','Mode 1-4', s1.selesai + '/' + s1.totalMode, s1.rata === null ? '' : s1.rata, s1.tuntas, s1.persenTuntas === null ? '' : s1.persenTuntas, p1.total, p1.rata === null ? '' : p1.rata, p1.rata === null ? '' : predikatTim(p1.rata).nama]);
+  rows.push(['Siklus 2','Mode 5-8', s2.selesai + '/' + s2.totalMode, s2.rata === null ? '' : s2.rata, s2.tuntas, s2.persenTuntas === null ? '' : s2.persenTuntas, p2.total, p2.rata === null ? '' : p2.rata, p2.rata === null ? '' : predikatTim(p2.rata).nama]);
+  if(s1.rata !== null && s2.rata !== null){
+    const selisih = Math.round((s2.rata - s1.rata) * 10) / 10;
+    const persen = s1.rata > 0 ? Math.round((s2.rata - s1.rata) / s1.rata * 1000) / 10 : 0;
+    const gain = s1.rata >= 100 ? 1 : (s2.rata - s1.rata) / (100 - s1.rata);
+    const gainR = Math.round(gain * 100) / 100;
+    rows.push([]);
+    rows.push(['PENINGKATAN']);
+    rows.push(['Selisih rata-rata (Siklus 2 - Siklus 1)', selisih]);
+    rows.push(['Peningkatan (%)', persen]);
+    rows.push(['N-Gain', gainR]);
+    rows.push(['Kategori N-Gain', gainR >= 0.7 ? 'Tinggi' : (gainR >= 0.3 ? 'Sedang' : 'Rendah')]);
+  }
+  const csvContent = rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob(['\ufeff' + csvContent], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeNama = state.student.nama.replace(/[^a-z0-9]+/gi,'_');
+  a.href = url;
+  a.download = 'RekapPTK_SIGAPBERITA_' + safeNama + '_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function resetPTK(){
+  if(!confirm('Hapus seluruh NILAI 8 mode (data PTK Siklus 1 & 2) milik "' + (state.student.nama || 'siswa ini') + '"?\n\nSkor permainan tidak ikut terhapus.')) return;
+  state.nilai = defaultNilai();
+  saveHud();
+  renderMenuNilai();
+  renderPTKRekap();
+}
+
+/* ---------- TAHAP 1: ICE BREAKING ---------- */
+function mulaiTGT(){
+  if(typeof renderTGTSteps === 'function') renderTGTSteps(3);
+  const cfg = tgtConfig;
+  ptkSesi = { poin:0, benar:0, riwayat:[] };
+  ptkOrder = [...Array(cfg.soal.length).keys()]; // urutan tetap agar data antar-siswa setara
+  ptkIndex = 0;
+  hideAll();
+  document.getElementById('screen-ptk-play').style.display = 'block';
+  document.getElementById('ptkPlayTitle').textContent = '🏆 Mode 8 — ' + cfg.nama;
+  ptkShowStep('ice');
+  document.getElementById('ptkIceEmoji').textContent = cfg.ice.emoji;
+  document.getElementById('ptkIceJudul').textContent = cfg.ice.judul;
+  document.getElementById('ptkIceInstruksi').textContent = cfg.ice.instruksi;
+  const ol = document.getElementById('ptkIceSteps');
+  ol.innerHTML = '';
+  cfg.ice.langkah.forEach(t=>{ const li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
+  logAnswer({
+    mode: 'Mode 8 Turnamen TGT',
+    bagian: 'Babak 1 — Ice Breaking',
+    item: cfg.ice.judul,
+    jawabanSiswa: 'Mengikuti ice breaking',
+    kunci: '-',
+    status: 'Terlaksana'
+  });
+}
+
+function ptkShowStep(step){
+  const map = { ice:1, game:2, write:3 };
+  document.getElementById('ptkIce').style.display   = step==='ice'   ? 'block' : 'none';
+  document.getElementById('ptkGame').style.display  = step==='game'  ? 'block' : 'none';
+  document.getElementById('ptkWrite').style.display = step==='write' ? 'block' : 'none';
+  document.getElementById('ptkStepLabel').textContent = 'Babak ' + map[step] + '/3';
+  document.getElementById('ptkProgressBar').style.width = ((map[step]-1)/3*100) + '%';
+}
+
+/* ---------- TAHAP 2: TURNAMEN TGT ---------- */
+function ptkGoTurnamen(){
+  ptkShowStep('game');
+  document.getElementById('ptkKelompokLabel').textContent = state.student.kelompok || 'Kelompok';
+  document.getElementById('ptkPoin').textContent = ptkSesi.poin;
+  renderPTKSoal();
+}
+
+function renderPTKDots(){
+  const dots = document.getElementById('ptkDots');
+  dots.innerHTML = '';
+  ptkOrder.forEach((_, i)=>{
+    const span = document.createElement('span');
+    const r = ptkSesi.riwayat[i];
+    if(r === true) span.className = 'done-correct';
+    else if(r === false) span.className = 'done-wrong';
+    else if(i === ptkIndex) span.className = 'current';
+    dots.appendChild(span);
+  });
+}
+
+function renderPTKSoal(){
+  ptkAnswered = false;
+  const cfg = tgtConfig;
+  const data = cfg.soal[ptkOrder[ptkIndex]];
+  renderPTKDots();
+  document.getElementById('ptkQuestion').textContent = (ptkIndex+1) + '. ' + data.q;
+  document.getElementById('ptkMascotText').textContent = 'Soal ' + (ptkIndex+1) + ' dari ' + ptkOrder.length + ' — setiap jawaban benar bernilai 10 poin untuk kelompokmu!';
+  const box = document.getElementById('ptkOptions');
+  box.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  const optOrder = shuffle([...Array(data.opts.length).keys()]);
+  optOrder.forEach((oi, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    const l = document.createElement('span'); l.className = 'opt-letter'; l.textContent = letters[idx] || '?';
+    const t = document.createElement('span'); t.textContent = data.opts[oi];
+    btn.appendChild(l); btn.appendChild(t);
+    btn.onclick = ()=> ptkJawab(btn, oi, data);
+    box.appendChild(btn);
+  });
+  const fb = document.getElementById('ptkFeedback');
+  fb.className = 'feedback'; fb.textContent = '';
+  document.getElementById('ptkNextBtn').disabled = true;
+  document.getElementById('ptkNextBtn').textContent = (ptkIndex === ptkOrder.length-1) ? 'Lanjut ke Tugas Menulis ➜' : 'Lanjut ➜';
+}
+
+function ptkJawab(btn, pilihan, data){
+  if(ptkAnswered) return;
+  ptkAnswered = true;
+  const benar = (pilihan === data.correct);
+  ptkSesi.riwayat[ptkIndex] = benar;
+  const buttons = document.getElementById('ptkOptions').querySelectorAll('button');
+  buttons.forEach(b=> b.disabled = true);
+  btn.classList.add(benar ? 'correct' : 'wrong');
+  if(!benar){
+    buttons.forEach(b=>{ if(b.textContent.slice(1) === data.opts[data.correct]) b.classList.add('correct'); });
+  }
+  if(benar){
+    ptkSesi.benar++;
+    ptkSesi.poin += 10;
+    state.score += 5;
+  }
+  document.getElementById('ptkPoin').textContent = ptkSesi.poin;
+  saveHud();
+  const fb = document.getElementById('ptkFeedback');
+  fb.className = 'feedback show ' + (benar ? 'good' : 'bad');
+  fb.textContent = (benar ? '✅ Benar! +10 poin turnamen. ' : '❌ Belum tepat. ') + data.explain;
+  if(benar) fireConfetti(14);
+  renderPTKDots();
+  logAnswer({
+    mode: 'Mode 8 Turnamen TGT',
+    bagian: 'Babak 2 — Turnamen Kartu Soal (soal ' + (ptkIndex+1) + '/' + ptkOrder.length + ')',
+    item: data.q,
+    jawabanSiswa: data.opts[pilihan],
+    kunci: data.opts[data.correct],
+    status: benar ? 'Benar' : 'Salah'
+  });
+  document.getElementById('ptkNextBtn').disabled = false;
+}
+
+function ptkNextSoal(){
+  ptkIndex++;
+  if(ptkIndex >= ptkOrder.length){
+    ptkRenderWriting();
+  } else {
+    renderPTKSoal();
+  }
+}
+
+/* ---------- TAHAP 3: TUGAS MENULIS ---------- */
+function ptkRenderWriting(){
+  const cfg = tgtConfig;
+  ptkShowStep('write');
+  document.getElementById('ptkWriteTema').textContent = cfg.tulis.tema;
+  const grid = document.getElementById('ptkFaktaGrid');
+  grid.innerHTML = '';
+  const labels = {apa:'Apa', siapa:'Siapa', kapan:'Kapan', dimana:'Di mana', mengapa:'Mengapa', bagaimana:'Bagaimana'};
+  Object.keys(labels).forEach(k=>{
+    const div = document.createElement('div');
+    div.innerHTML = '<b>' + labels[k] + ':</b> ' + cfg.tulis.fakta[k];
+    grid.appendChild(div);
+  });
+  ['ptkJudul','ptkTeras','ptkTubuh','ptkEkor'].forEach(id=> document.getElementById(id).value = '');
+  updateWordCount('ptkJudul','wcPtkJudul');
+  updateWordCount('ptkTeras','wcPtkTeras');
+  updateWordCount('ptkTubuh','wcPtkTubuh');
+  updateWordCount('ptkEkor','wcPtkEkor');
+  document.getElementById('ptkChecklistBox').style.display = 'none';
+  const fb = document.getElementById('ptkWriteFeedback');
+  fb.className = 'feedback'; fb.textContent = '';
+  document.getElementById('ptkWriteCheckBtn').style.display = 'inline-block';
+  document.getElementById('ptkWriteDoneBtn').style.display = 'none';
+}
+
+function ptkCheckWriting(){
+  const cfg = tgtConfig;
+  const judul = document.getElementById('ptkJudul').value.trim();
+  const teras = document.getElementById('ptkTeras').value.trim();
+  const tubuh = document.getElementById('ptkTubuh').value.trim();
+  const ekor  = document.getElementById('ptkEkor').value.trim();
+  if(!judul || !teras || !tubuh){
+    const fb = document.getElementById('ptkWriteFeedback');
+    fb.className = 'feedback show bad';
+    fb.textContent = 'Lengkapi minimal judul, teras, dan tubuh berita sebelum dikumpulkan ya!';
+    return;
+  }
+  const fullText = normalize([judul, teras, tubuh, ekor].join(' '));
+  const structChecks = [
+    {label:'Judul singkat & jelas (maks. 15 kata)', pass: countWords(judul) > 0 && countWords(judul) <= 15},
+    {label:'Teras berita memuat inti peristiwa (min. 12 kata)', pass: countWords(teras) >= 12},
+    {label:'Tubuh berita menguraikan peristiwa (min. 25 kata)', pass: countWords(tubuh) >= 25},
+    {label:'Ekor berita terisi sebagai pelengkap (min. 5 kata)', pass: countWords(ekor) >= 5}
+  ];
+  const labels = {apa:'Apa', siapa:'Siapa', kapan:'Kapan', dimana:'Di mana', mengapa:'Mengapa', bagaimana:'Bagaimana'};
+  let faktaMatches = 0;
+  const faktaChecks = Object.keys(labels).map(k=>{
+    const found = cfg.tulis.keywords[k].some(kw => fullText.indexOf(normalize(kw)) !== -1);
+    if(found) faktaMatches++;
+    return {label:'Unsur "' + labels[k] + '" tampak dalam tulisan', pass: found};
+  });
+  const structPass = structChecks.filter(c=>c.pass).length;
+
+  const nilaiMenulis = Math.round(structPass/4*40 + faktaMatches/6*60);
+  const nilaiTurnamen = Math.round(ptkSesi.benar / ptkOrder.length * 100);
+  const nilaiAkhir = Math.round(nilaiTurnamen*0.4 + nilaiMenulis*0.6);
+
+  const pts = structPass*5 + faktaMatches*5;
+  state.score += pts;
+
+  saveHud();
+  catatNilaiMode(8, nilaiAkhir,
+    'Turnamen ' + ptkSesi.benar + '/' + ptkOrder.length + ' benar (nilai ' + nilaiTurnamen +
+    ') + menulis struktur ' + structPass + '/4, ADIKSIMBA ' + faktaMatches + '/6 (nilai ' + nilaiMenulis + ')');
+
+  const ul = document.getElementById('ptkChecklist');
+  ul.innerHTML = '';
+  structChecks.concat(faktaChecks).forEach(c=>{
+    const li = document.createElement('li');
+    li.className = c.pass ? 'pass' : 'fail';
+    li.textContent = (c.pass ? '✔ ' : '✘ ') + c.label;
+    ul.appendChild(li);
+  });
+  document.getElementById('ptkChecklistBox').style.display = 'block';
+
+  const fb = document.getElementById('ptkWriteFeedback');
+  fb.className = 'feedback show ' + (nilaiAkhir >= PTK_KKM ? 'good' : 'bad');
+  fb.innerHTML = '📋 <b>' + cfg.nama + ' selesai.</b> Nilai turnamen <b>' + nilaiTurnamen + '</b> • nilai menulis <b>' + nilaiMenulis +
+    '</b> • <b>nilai akhir ' + nilaiAkhir + '</b> (' + (nilaiAkhir >= PTK_KKM ? 'TUNTAS' : 'belum mencapai KKM ' + PTK_KKM) + '). Tulisanmu sudah terkirim untuk dinilai guru.';
+  if(nilaiAkhir >= PTK_KKM) fireConfetti(50);
+
+  logAnswer({
+    mode: 'Mode 8 Turnamen TGT',
+    bagian: 'Babak 3 — Menulis Teks Berita',
+    item: cfg.tulis.tema,
+    jawabanSiswa: 'JUDUL: ' + judul + ' | TERAS: ' + teras + ' | TUBUH: ' + tubuh + ' | EKOR: ' + (ekor || '-'),
+    kunci: 'Struktur ' + structPass + '/4, ADIKSIMBA ' + faktaMatches + '/6',
+    status: 'Nilai menulis ' + nilaiMenulis
+  });
+  document.getElementById('ptkWriteCheckBtn').style.display = 'none';
+  document.getElementById('ptkWriteDoneBtn').style.display = 'inline-block';
+  state.lastMode = 'tgt';
+}
+
+/* ===================== RESULT RETRY ===================== */
+function retryLast(){
+  const petaMode = {quiz:1, drag:2, detective:3, matching:4, editor:5, timeattack:6, writing:7, tgt:8};
+  if(petaMode[state.lastMode]){ bukaModeTGT(petaMode[state.lastMode]); return; }
+  if(state.lastMode === 'quiz') startQuiz();
+  else if(state.lastMode === 'drag') startDrag();
+  else if(state.lastMode === 'detective') startDetective();
+  else if(state.lastMode === 'matching') startMatching();
+  else if(state.lastMode === 'editor') startEditor();
+  else if(state.lastMode === 'timeattack') startTimeAttack();
+  else if(state.lastMode === 'writing') startWriting();
+  else if(state.lastMode === 'tgt') mulaiTGT();
+  else goMenu();
+}
+
+/* ===================== INIT ===================== */
+saveHud();
+updateConnStatus();
+refreshSavedInfo();
+renderMenuNilai();
+hideAll();
+document.getElementById('screen-start').style.display = 'block';
+document.getElementById('inputNama').focus();
+</script>
+</body>
+</html>
